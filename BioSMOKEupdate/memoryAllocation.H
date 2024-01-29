@@ -32,6 +32,8 @@ double Pbulk;
 OpenSMOKE::OpenSMOKEVectorDouble omegaIn_gas;
 OpenSMOKE::OpenSMOKEVectorDouble omegaSup_gas;
 double rhoGas;
+OpenSMOKE::OpenSMOKEVectorDouble cGas_TGA;
+OpenSMOKE::OpenSMOKEVectorDouble xGasIn;
 
 //- fase solida
 double Tsolid;
@@ -104,6 +106,7 @@ OpenSMOKE::OpenSMOKEVectorDouble omegaSolidFraction;
 OpenSMOKE::OpenSMOKEVectorDouble xGasFraction;
 OpenSMOKE::OpenSMOKEVectorDouble xSolidFraction;
 double MW_gas;  // elemento da passare alle openSmoke
+double MW_gas_in;
 OpenSMOKE::OpenSMOKEVectorDouble MW_gas_mix;
 OpenSMOKE::OpenSMOKEVectorDouble MW_solid_mix;
 double cP_gas;  // elemento da passare alle openSmoke

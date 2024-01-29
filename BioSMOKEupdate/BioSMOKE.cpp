@@ -101,7 +101,7 @@ int main(int argc, char** argv)
     boost::filesystem::path executable_file = boost::filesystem::system_complete(argv[0]);
     boost::filesystem::path executable_folder = executable_file.parent_path();
 
-    OpenSMOKE::OpenSMOKE_logo("bioSMOKE 2023", "Riccardo Caraccio (riccardo.caraccio@polimi.it)");
+    OpenSMOKE::OpenSMOKE_logo("bioSMOKE 2024", "Riccardo Caraccio (riccardo.caraccio@polimi.it)");
 
     unsigned int max_number_allowed_species = 100000;
     //OpenSMOKE::OpenSMOKE_CheckLicense(executable_folder, "bioSMOKE", max_number_allowed_species);
@@ -311,6 +311,11 @@ int main(int argc, char** argv)
     ChangeDimensions(solid_species + gas_species, &MW_tot, true);
     ChangeDimensions(solid_species, &MW_solid, true);
     ChangeDimensions(intervalli, &P, true);
+    ChangeDimensions(gas_species, &xGasIn, true);
+    ChangeDimensions(gas_species, &cGas_TGA, true);
+
+    MW_gas_in = thermodynamicsMapXML->MolecularWeight_From_MassFractions(omegaIn_gas.GetHandle());
+    thermodynamicsMapXML->MoleFractions_From_MassFractions(xGasIn.GetHandle(), MW_gas_in, omegaIn_gas.GetHandle()); // Calculate the mole fractions for the entering gas
 
     for (int i = 1; i <= P.Size(); i++)
         P[i] = Psolid;
@@ -1010,9 +1015,9 @@ int main(int argc, char** argv)
         OpenSMOKE::FatalErrorMessage("Unknown simulation type");
     _fcloseall;
 
-    cout << "//////////////////////////////////////////////////" << endl;
-    cout << "//                ALL DONE                      //" << endl;
-    cout << "//////////////////////////////////////////////////" << endl;
+    cout << "-----------------------------------------------------------------------------" << endl;
+    cout << "//                               ALL DONE                                  //" << endl;
+    cout << "-----------------------------------------------------------------------------" << endl;
 
     return 0;
 }

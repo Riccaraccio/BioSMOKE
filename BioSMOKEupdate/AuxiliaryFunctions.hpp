@@ -43,11 +43,10 @@ void OdeTGA(const double* y, const double t, double* dy, void* args)
         omegaGas_TGA[j - solid_species] = mass_TGA[j] / (massFinalGas);
 
     // Concentrations evaluation
-    OpenSMOKE::OpenSMOKEVectorDouble cGas_TGA(thermodynamicsSolidMapXML->number_of_gas_species());
-    for (int j = 1; j <= gas_species; j++)
+
+    for (int j = 1; j <= gas_species; j++) 
     {
-        //cGas_TGA[j] = mass_TGA[j + solid_species] / MW_tot[j + solid_species];
-        cGas_TGA[j] = Psolid / 8.314 / T_TGA * omegaGas_TGA[j + solid_species]; // approximated but it's not really used 
+        cGas_TGA[j] = Psolid / 8.314 / T_TGA * xGasIn[j]; // Cgas calcualted using fixed gas composition = inlet gas composition 
     }
 
     OpenSMOKE::OpenSMOKEVectorDouble cSolid_TGA(solid_species);
