@@ -397,6 +397,14 @@ namespace OpenSMOKE
                         }
                     }
                 }
+
+                //Check if species is included in the solid mechanism
+                for (int j = 0; j < names.size(); j++) {
+                    if (thermodynamicsSolidMapXML.IndexOfSpecies(names[j]) < 0) {
+                        OpenSMOKE::FatalErrorMessage("Check the provided species");
+                    }
+                }
+
             }
 
             
