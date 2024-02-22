@@ -1068,7 +1068,7 @@ void CalculateProperties()
         for (int j = 1; j <= solid_species; j++)
             cp_solid_species[j] = cp_tot[j + gas_species] / MW_tot[j];  //Cp_solid_species [J/kg/K];
 
-        cPsolid_mix[i] = 1600.0;// Dot(cp_solid_species, omegaSolidFraction);
+        cPsolid_mix[i] = Dot(cp_solid_species, omegaSolidFraction);
 
 
         for (int j = 1; j <= solid_species; j++)
