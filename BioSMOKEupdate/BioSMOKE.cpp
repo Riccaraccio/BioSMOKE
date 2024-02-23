@@ -276,7 +276,7 @@ int main(int argc, char** argv)
             dictionaries(main_dictionary_name_).ReadDictionary("@InletSolidStatus", name_of_solid_status_subdictionary);
 
         GetSolidStatusFromDictionary(dictionaries(name_of_solid_status_subdictionary), *thermodynamicsSolidMapXML, Tsolid, Psolid,
-            Tsup_solid, rhoSolid, omegaIn_solid, omegaSup_solid, lambdaA, lambdaB, hext, lambdaS);
+            rhoSolid, omegaIn_solid, hext, lambdaS);
 
         if (temperature_profile == true)
             Tsolid = temperature_profile_->Get(0.);

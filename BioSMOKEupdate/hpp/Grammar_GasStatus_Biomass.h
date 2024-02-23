@@ -59,40 +59,7 @@ namespace OpenSMOKE
                                                                 "@MoleFractions @MassFractions @Moles",
                                                                 "none",
                                                                 "none") );
-            
-            AddKeyWord( OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@MoleFractionsSup", 
-                                                                OpenSMOKE::VECTOR_STRING_DOUBLE, 
-                                                                "Mole fractions of the mixture at surface (i.e. CH4 0.60 H2 0.40)", 
-                                                                true,
-                                                                "@MassFractionsSup @MolesSup @MassesSup",
-                                                                "none",
-                                                                "none") );
-
-            AddKeyWord( OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@MassFractionsSup", 
-                                                                OpenSMOKE::VECTOR_STRING_DOUBLE, 
-                                                                "Mass fractions of the mixture at surface (i.e. CH4 0.60 H2 0.40)", 
-                                                                true,
-                                                                "@MoleFractionsSup @MolesSup @MassesSup" ,
-                                                                "none",
-                                                                "none") );
-
-            AddKeyWord( OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@MolesSup", 
-                                                                OpenSMOKE::VECTOR_STRING_DOUBLE, 
-                                                                "Moles (relative) of the mixture at surface (i.e. CH4 2 H2 1)", 
-                                                                true,
-                                                                "@MoleFractionsSup @MassFractionsSup @MassesSup",
-                                                                "none",
-                                                                "none") );
-
-            AddKeyWord( OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@MassesSup", 
-                                                                OpenSMOKE::VECTOR_STRING_DOUBLE, 
-                                                                "Masses (relative) of the mixture at surface (i.e. CH4 2 H2 1)", 
-                                                                true,
-                                                                "@MoleFractionsSup @MassFractionsSup @MolesSup ",
-                                                                "none",
-                                                                "none") );
-            
-            
+ 
 
         }
     };
