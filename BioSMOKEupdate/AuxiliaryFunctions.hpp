@@ -238,27 +238,18 @@ void OdeTotal(const double* y, const double t, double* dy, void* args)
     if (temperature_profile == true)
     {
         //Heat_Rates = temperature_profile_->Get_increase(t);
-        Tsup_solid = temperature_profile_->Get_temperature(t);
+        Tbulk = temperature_profile_->Get_temperature(t);
     }
-    /*cout << "/////////////////////////////////////////////" << endl;
-    for (int i = 1; i <= intervalli; i++)
-    {
-        for (int j = 1; j <= Neq-1; j++)
-            cout << i << "\t" << j << "\t" << mass[i][j] << endl;
-    }
-    cout << "///////////////////////////////" << endl;
-    for (int i = 1; i <= intervalli; i++)
-        cout << i << "\t" << T[i] << endl;*/
 
-        //T[intervalli] += 10000*t;
-        //T[intervalli] = (487.9*exp(0.0006094*t) - 404.5*exp(-0.0216*t))+273.15;
-        //T[intervalli] = 473.15;
-        //T[intervalli] = 866 - (866 - 300)*exp(-t / 50) + 700 * (1 - exp(-t / 50))*exp(-t / 25); //BEST CORRELATION FOR PARK
-        //T[intervalli] = 742-(742-300)*exp(-t/50)+500*(1-exp(-t/20))*exp(-t/25);
-        //Tsup_solid= 688-(688-300)*exp(-t/70)+700*(1-exp(-t/200))*exp(-t/18);/*300 + 1.667/4*t;*/
+    //T[intervalli] += 10000*t;
+    //T[intervalli] = (487.9*exp(0.0006094*t) - 404.5*exp(-0.0216*t))+273.15;
+    //T[intervalli] = 473.15;
+    //T[intervalli] = 866 - (866 - 300)*exp(-t / 50) + 700 * (1 - exp(-t / 50))*exp(-t / 25); //BEST CORRELATION FOR PARK
+    //T[intervalli] = 742-(742-300)*exp(-t/50)+500*(1-exp(-t/20))*exp(-t/25);
+    //Tsup_solid= 688-(688-300)*exp(-t/70)+700*(1-exp(-t/200))*exp(-t/18);/*300 + 1.667/4*t;*/
 
-        //T[intervalli] = Tsup_solid;
-        //T[intervalli] = 875.5*exp(-4.121e-5*t)-567.8*exp(-0.004238*t); //Tsup beech wood diblasi2003
+    //T[intervalli] = Tsup_solid;
+    //T[intervalli] = 875.5*exp(-4.121e-5*t)-567.8*exp(-0.004238*t); //Tsup beech wood diblasi2003
 
 
     for (int i = 1; i <= intervalli; i++)
@@ -275,8 +266,6 @@ void OdeTotal(const double* y, const double t, double* dy, void* args)
 
 
     // Equations
-    //for (int o = 0; o < (solid_species + gas_species); o++)
-    //    cout << o << "\t" << dmass[1][o] << endl;
 
     k = 0;
     for (int i = 1; i <= intervalli; i++)
@@ -287,7 +276,6 @@ void OdeTotal(const double* y, const double t, double* dy, void* args)
                 dy[k++] = dmass[i][j];
             else
                 dy[k++] = dT[i];
-            //cout << k << "\t" << dy[k-1] << endl;
         }
     }
 
@@ -1279,7 +1267,15 @@ void CreateMaterialBalances()
         }
 
     }
-   
+
+    // Calculate interfacial properties
+    for (int i = 1; i <= gas_species; i++) {
+        omegaI[i] = (Kc[i] * omegaIn_gas[i] + Diff_eff[intervalli][i] * massFraction[intervalli][i] / (raggio[intervalli] - r[intervalli])) /
+            (Kc[i] + Diff_eff[intervalli][i] / (raggio[intervalli] - r[intervalli]));
+    }
+    double MW_gasI = thermodynamicsMapXML->MolecularWeight_From_MassFractions(omegaI.GetHandle());
+    double rhoGasI = P[intervalli] * MW_gasI / PhysicalConstants::R_J_kmol * T[intervalli]; // approx
+
     // r=R  ---> m=mS  
     for (int i = 1; i <= (solid_species + gas_species); i++)
     {
@@ -1296,14 +1292,8 @@ void CreateMaterialBalances()
             }
             
             massConvection_out[intervalli] = -Da / dyn_viscosity[intervalli] * rho_gas[intervalli] * S[intervalli] * (Psolid - P[intervalli]) / (raggio[intervalli] - r[intervalli]);
-            Kc[i - solid_species] = 2.0 * Diff_eff[intervalli][i - solid_species] / (2 * raggio[intervalli]);
-            double rho0 = 0.569023845;
 
-            omegaI[i - solid_species] = (Kc[i - solid_species] * omegaSup_gas[i - solid_species] + Diff_eff[intervalli][i - solid_species] * massFraction[intervalli][i] / (raggio[intervalli] - r[intervalli])) /
-                (Kc[i - solid_species] + Diff_eff[intervalli][i - solid_species] / (raggio[intervalli] - r[intervalli]));
-
-            JD_out[intervalli][i - solid_species] = -Kc[i - solid_species] * rho0 * S[intervalli] * (omegaSup_gas[i - solid_species] - omegaI[i - solid_species]);
-           
+            JD_out[intervalli][i - solid_species] = -Kc[i - solid_species] * S[intervalli]* (rhoGas * omegaIn_gas[i - solid_species] - rhoGasI * omegaI[i - solid_species]);
             
             dmass[intervalli][i] = JD_in[intervalli][i - solid_species] - JD_out[intervalli][i - solid_species] + (FormationRate[intervalli][i] * MW_tot[i] * V[intervalli] * (1 - epsi_var[intervalli])) + (massConvection_in[intervalli] * massFraction[intervalli - 1][i] - massConvection_out[intervalli] * massFraction[intervalli][i]);
 
@@ -1410,7 +1400,7 @@ void CreateEnergyBalances()
 
 
         //double Tsurf;
-        Tsurf_solid = (hext * Tsup_solid + lambda_effective[intervalli] * T[intervalli] / (raggio[intervalli] - r[intervalli])) /
+        Tsurf_solid = (hext * Tbulk + lambda_effective[intervalli] * T[intervalli] / (raggio[intervalli] - r[intervalli])) /
             (hext + lambda_effective[intervalli] / (raggio[intervalli] - r[intervalli]));
 
 

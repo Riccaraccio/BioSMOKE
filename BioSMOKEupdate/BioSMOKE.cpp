@@ -267,7 +267,7 @@ int main(int argc, char** argv)
         if (dictionaries(main_dictionary_name_).CheckOption("@InletGasStatus") == true)
             dictionaries(main_dictionary_name_).ReadDictionary("@InletGasStatus", name_of_gas_status_subdictionary);
 
-        GetGasStatusFromDictionary(dictionaries(name_of_gas_status_subdictionary), *thermodynamicsMapXML, Tbulk, Pbulk, rhoGas, omegaIn_gas, omegaSup_gas);
+        GetGasStatusFromDictionary(dictionaries(name_of_gas_status_subdictionary), *thermodynamicsMapXML, Tbulk, Pbulk, rhoGas, omegaIn_gas);
     }
 
     {
@@ -276,7 +276,7 @@ int main(int argc, char** argv)
             dictionaries(main_dictionary_name_).ReadDictionary("@InletSolidStatus", name_of_solid_status_subdictionary);
 
         GetSolidStatusFromDictionary(dictionaries(name_of_solid_status_subdictionary), *thermodynamicsSolidMapXML, Tsolid, Psolid,
-            Tsup_solid, rhoSolid, omegaIn_solid, omegaSup_solid, lambdaA, lambdaB, hext, lambdaS);
+            rhoSolid, omegaIn_solid, hext, lambdaS);
 
         if (temperature_profile == true)
             Tsolid = temperature_profile_->Get(0.);
@@ -313,9 +313,23 @@ int main(int argc, char** argv)
     ChangeDimensions(intervalli, &P, true);
     ChangeDimensions(gas_species, &xGasIn, true);
     ChangeDimensions(gas_species, &cGas_TGA, true);
+    ChangeDimensions(gas_species, &Kc, true);
+    ChangeDimensions(gas_species, &Diff, true);
+
+    // Calculate the properties for the entering gas
+    thermodynamicsMapXML->SetPressure(Pbulk);       transportMapXML->SetPressure(Pbulk);
+    thermodynamicsMapXML->SetTemperature(Tbulk);    transportMapXML->SetTemperature(Tbulk);
 
     MW_gas_in = thermodynamicsMapXML->MolecularWeight_From_MassFractions(omegaIn_gas.GetHandle());
-    thermodynamicsMapXML->MoleFractions_From_MassFractions(xGasIn.GetHandle(), MW_gas_in, omegaIn_gas.GetHandle()); // Calculate the mole fractions for the entering gas
+    thermodynamicsMapXML->MoleFractions_From_MassFractions(xGasIn.GetHandle(), MW_gas_in, omegaIn_gas.GetHandle()); 
+    ExtGas_cp = thermodynamicsMapXML->cpMolar_Mixture_From_MoleFractions(xGasIn.GetHandle()) / MW_gas_in;
+    ExtGas_lambda = transportMapXML->ThermalConductivity(xGasIn.GetHandle());
+    transportMapXML->MassDiffusionCoefficients(Diff.GetHandle(), xGasIn.GetHandle());
+
+    // Mass transfer coefficents calculated trought the Colburn analogy
+    for (int i = 1; i <= gas_species; i++) {
+        Kc[i] = hext * pow((pow(Diff[i], 2) / (pow(ExtGas_lambda, 2) * rhoGas * ExtGas_cp)), 1.0 / 3.0);
+    }
 
     for (int i = 1; i <= P.Size(); i++)
         P[i] = Psolid;
@@ -483,7 +497,6 @@ int main(int argc, char** argv)
 
             unsigned int counter = 1;
             OpenSMOKE::PrintTagOnASCIILabel(25, temp, "t[s]", counter);
-            //OpenSMOKE::PrintTagOnASCIILabel(25, temp, "t[min]", counter);
 
             for (int i = 1; i <= intervalli; i++)
             {
@@ -500,7 +513,6 @@ int main(int argc, char** argv)
 
             unsigned int counter = 1;
             OpenSMOKE::PrintTagOnASCIILabel(25, press, "t[s]", counter);
-            //OpenSMOKE::PrintTagOnASCIILabel(25, temp, "t[min]", counter);
 
             for (int i = 1; i <= intervalli; i++)
             {
@@ -517,7 +529,6 @@ int main(int argc, char** argv)
 
             unsigned int counter = 1;
             OpenSMOKE::PrintTagOnASCIILabel(25, fmass, "t[s]", counter);
-            //OpenSMOKE::PrintTagOnASCIILabel(25, fmass, "t[min]", counter);
 
             for (int i = 1; i <= intervalli; i++)
             {
@@ -534,7 +545,6 @@ int main(int argc, char** argv)
 
             unsigned int counter = 1;
             OpenSMOKE::PrintTagOnASCIILabel(25, por, "t[s]", counter);
-            //OpenSMOKE::PrintTagOnASCIILabel(25, temp, "t[min]", counter);
 
             for (int i = 1; i <= intervalli; i++)
             {

@@ -59,46 +59,13 @@ namespace OpenSMOKE
                                                                 "@MoleFractions @MassFractions @Moles",
                                                                 "none",
                                                                 "none") );
-            
-            AddKeyWord( OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@MoleFractionsSup", 
-                                                                OpenSMOKE::VECTOR_STRING_DOUBLE, 
-                                                                "Mole fractions of the mixture at surface (i.e. CH4 0.60 H2 0.40)", 
-                                                                true,
-                                                                "@MassFractionsSup @MolesSup @MassesSup",
-                                                                "none",
-                                                                "none") );
-
-            AddKeyWord( OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@MassFractionsSup", 
-                                                                OpenSMOKE::VECTOR_STRING_DOUBLE, 
-                                                                "Mass fractions of the mixture at surface (i.e. CH4 0.60 H2 0.40)", 
-                                                                true,
-                                                                "@MoleFractionsSup @MolesSup @MassesSup" ,
-                                                                "none",
-                                                                "none") );
-
-            AddKeyWord( OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@MolesSup", 
-                                                                OpenSMOKE::VECTOR_STRING_DOUBLE, 
-                                                                "Moles (relative) of the mixture at surface (i.e. CH4 2 H2 1)", 
-                                                                true,
-                                                                "@MoleFractionsSup @MassFractionsSup @MassesSup",
-                                                                "none",
-                                                                "none") );
-
-            AddKeyWord( OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@MassesSup", 
-                                                                OpenSMOKE::VECTOR_STRING_DOUBLE, 
-                                                                "Masses (relative) of the mixture at surface (i.e. CH4 2 H2 1)", 
-                                                                true,
-                                                                "@MoleFractionsSup @MassFractionsSup @MolesSup ",
-                                                                "none",
-                                                                "none") );
-            
-            
+ 
 
         }
     };
     
     void GetGasStatusFromDictionary(OpenSMOKE::OpenSMOKE_Dictionary& dictionary, OpenSMOKE::ThermodynamicsMap_CHEMKIN& thermodynamicsMapXML,
-				    double& T, double& P_Pa, double& rho, OpenSMOKE::OpenSMOKEVectorDouble& omega, OpenSMOKE::OpenSMOKEVectorDouble& omegaSup)
+				    double& T, double& P_Pa, double& rho, OpenSMOKE::OpenSMOKEVectorDouble& omega)
     {
         Grammar_Gas grammar_gas_status;
         dictionary.SetGrammar(grammar_gas_status);
@@ -222,61 +189,6 @@ namespace OpenSMOKE
                     for(unsigned int i=0;i<names.size();i++)
                             omega[thermodynamicsMapXML.IndexOfSpecies(names[i])] = values[i]/sum;
                     
-                }
-            }
-        }
-        
-        // Composition Surface
-        {
-            {
-                std::vector<std::string> names;
-                std::vector<double> values;
-
-                if (dictionary.CheckOption("@MoleFractionsSup") == true)
-                {
-                    dictionary.ReadOption("@MoleFractionsSup", names, values);
-
-                    const double sum =std::accumulate(values.begin(),values.end(),0.);
-                    if (sum<(1.-1e-6) || sum>(1.+1e-6))
-                            OpenSMOKE::FatalErrorMessage("The mole fractions must sum to 1.");
-
-                    OpenSMOKE::OpenSMOKEVectorDouble x(thermodynamicsMapXML.NumberOfSpecies());
-                    for(unsigned int i=0;i<names.size();i++)
-                            x[thermodynamicsMapXML.IndexOfSpecies(names[i])] = values[i]/sum;
-                    ChangeDimensions(thermodynamicsMapXML.NumberOfSpecies(), &omegaSup, true);
-                    double MW;
-                    thermodynamicsMapXML.MassFractions_From_MoleFractions(omegaSup.GetHandle(),MW,x.GetHandle());
-                }
-                else if (dictionary.CheckOption("@MassFractionsSup") == true)
-                {
-                    dictionary.ReadOption("@MassFractionsSup", names, values);
-
-                    const double sum =std::accumulate(values.begin(),values.end(),0.);
-                    if (sum<(1.-1e-6) || sum>(1.+1e-6))
-                            OpenSMOKE::FatalErrorMessage("The mass fractions must sum to 1.");
-
-                    ChangeDimensions(thermodynamicsMapXML.NumberOfSpecies(), &omegaSup, true);
-                    for(unsigned int i=0;i<names.size();i++)
-                            omegaSup[thermodynamicsMapXML.IndexOfSpecies(names[i])] = values[i]/sum;
-                }
-                else if (dictionary.CheckOption("@MolesSup") == true)
-                {
-                    dictionary.ReadOption("@MolesSup", names, values);
-                    const double sum =std::accumulate(values.begin(),values.end(),0.);
-                    OpenSMOKE::OpenSMOKEVectorDouble x(thermodynamicsMapXML.NumberOfSpecies());
-                    for(unsigned int i=0;i<names.size();i++)
-                            x[thermodynamicsMapXML.IndexOfSpecies(names[i])] = values[i]/sum;
-                    ChangeDimensions(thermodynamicsMapXML.NumberOfSpecies(), &omegaSup, true);
-                    double MW;
-                    thermodynamicsMapXML.MassFractions_From_MoleFractions(omegaSup.GetHandle(),MW,x.GetHandle());
-                }
-                else  
-                {
-                    dictionary.ReadOption("@MassesSup", names, values);
-                    const double sum =std::accumulate(values.begin(),values.end(),0.);
-                    ChangeDimensions(thermodynamicsMapXML.NumberOfSpecies(), &omegaSup, true);
-                    for(unsigned int i=0;i<names.size();i++)
-                            omegaSup[thermodynamicsMapXML.IndexOfSpecies(names[i])] = values[i]/sum;
                 }
             }
         }
