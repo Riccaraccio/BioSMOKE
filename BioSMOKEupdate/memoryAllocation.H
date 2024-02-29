@@ -30,7 +30,6 @@ double Da;
 double Tbulk;
 double Pbulk;
 OpenSMOKE::OpenSMOKEVectorDouble omegaIn_gas;
-OpenSMOKE::OpenSMOKEVectorDouble omegaSup_gas;
 double rhoGas;
 OpenSMOKE::OpenSMOKEVectorDouble cGas_TGA;
 OpenSMOKE::OpenSMOKEVectorDouble xGasIn;
@@ -38,15 +37,11 @@ OpenSMOKE::OpenSMOKEVectorDouble xGasIn;
 //- fase solida
 double Tsolid;
 double Psolid;
-double Tsup_solid;  //Temperature of the gas boundary layer
 double Tsurf_solid;	// Temperature of the biomass surface (employed for flux balances at the biomass-gas interface)
 double hext;
 double rhoSolid;
 OpenSMOKE::OpenSMOKEVectorDouble omegaIn_solid;
-OpenSMOKE::OpenSMOKEVectorDouble omegaSup_solid;
 double lambdaS;
-OpenSMOKE::OpenSMOKEVectorDouble lambdaA;
-OpenSMOKE::OpenSMOKEVectorDouble lambdaB;
 
 
 // Elenco di variabili che sono dichiarate come variabili globali in 
@@ -148,6 +143,8 @@ OpenSMOKE::OpenSMOKEMatrixDouble Vel_gas;
 OpenSMOKE::OpenSMOKEVectorDouble RGG;
 
 // material and energy balance
+double ExtGas_cp;
+double ExtGas_lambda;
 
 OpenSMOKE::OpenSMOKEMatrixDouble JD_out;
 OpenSMOKE::OpenSMOKEMatrixDouble JD_in;

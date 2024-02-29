@@ -96,20 +96,6 @@ namespace OpenSMOKE
             }
         }
 
-        // Temperature at surface
-        {
-            if (dictionary.CheckOption("@TemperatureSup") == true)
-            {
-                double value;
-                std::string units;
-                dictionary.ReadMeasure("@TemperatureSup", value, units);
-
-                if (units == "K")			Tsup_solid = value;
-                else if (units == "C")		Tsup_solid = value + 273.15;
-                else OpenSMOKE::FatalErrorMessage("Unknown temperature units");
-            }
-        }
-
         // Heat exchange coefficient
         {
             if (dictionary.CheckOption("@hext") == true)
