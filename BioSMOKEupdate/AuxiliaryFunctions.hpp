@@ -144,7 +144,7 @@ void MyStepPrintTGA(const double t, const Eigen::VectorXd& Y)
     count_file_++;
 }
 
-void PrintFinalStatusTGA()
+void PrintFinalStatusTGA(const Eigen::VectorXd& final_status)
 {
 
     // PRINT LAST INTEGRATION STEP
@@ -155,62 +155,9 @@ void PrintFinalStatusTGA()
     std::cout << std::endl;
 
     // PRINT FINAL STATUS ON FILEs
-    unsigned int NS_ = thermodynamicsSolidMapXML->NumberOfSpecies();
-    unsigned int NSolid_ = thermodynamicsSolidMapXML->number_of_solid_species();
-    unsigned int NGas_ = thermodynamicsSolidMapXML->number_of_gas_species();
 
-    {
-        for (int j = 1; j <= NSolid_; j++)
-        {
-            finalYield << std::setw(35) << std::left << thermodynamicsSolidMapXML->NamesOfSpecies()[j + NGas_ - 1]
-                << std::setw(35) << std::left << omegaTot_TGA[j] << std::endl;
-        }
-
-        for (int j = NSolid_ + 1; j <= NS_; j++)
-        {
-            finalYield << std::setw(35) << std::left << thermodynamicsSolidMapXML->NamesOfSpecies()[j - NSolid_ - 1]
-                << std::setw(35) << std::left << omegaTot_TGA[j] << std::endl;
-        }
-    }
-
-    {
-        for (int j = 1; j <= NSolid_; j++)
-        {
-            finalYieldSolid << std::setw(35) << std::left << thermodynamicsSolidMapXML->NamesOfSpecies()[j + NGas_ - 1]
-                << std::setw(35) << std::left << omegaSolid_TGA[j] << std::endl;
-        }
-    }
-
-    {
-        for (int j = 1; j <= NGas_; j++)
-        {
-            finalYieldGas << std::setw(35) << std::left << thermodynamicsSolidMapXML->NamesOfSpecies()[j - 1]
-                << std::setw(35) << std::left << omegaGas_TGA[j] << std::endl;
-        }
-    }
-
-    {
-        double solidFinal = 0.0;
-        double gasFinal = 0.0;
-        double tarFinal = 0.0;
-
-
-        for (int j = 0; j < residualIndex.size(); j++)
-            solidFinal += omegaTot_TGA[residualIndex[j]];
-
-        for (int j = 0; j < lightGasIndex.size(); j++)
-            gasFinal += omegaTot_TGA[lightGasIndex[j]];
-
-        /*for (int j = 0; j< tarIndex.size(); j++)
-            tarFinal += omegaTot_TGA[tarIndex[j]];*/
-
-        tarFinal = 1 - solidFinal - gasFinal;
-
-        yieldScheletal << std::setw(35) << std::left << "CHAR  " << std::setw(35) << std::left << solidFinal << std::endl;
-        yieldScheletal << std::setw(35) << std::left << "LIGHT GAS  " << std::setw(35) << std::left << gasFinal << std::endl;
-        yieldScheletal << std::setw(35) << std::left << "TAR  " << std::setw(35) << std::left << tarFinal << std::endl;
-    }
-
+    count_file_ = n_steps_file_;
+    MyStepPrintTGA(final_time, final_status);
 }
 
 
@@ -623,12 +570,15 @@ void MyStepPrintTotal(const double t, const Eigen::VectorXd& x)
 
 }
 
-void PrintFinalStatusTotal()    
+void PrintFinalStatusTotal(const Eigen::VectorXd& final_status)    
 {
     std::cout << std::fixed << std::setw(18) << std::left << count_ode_video_;
     std::cout << std::scientific << std::setw(18) << std::setprecision(6) << std::left << t_old;
     std::cout << std::scientific << std::setw(18) << std::setprecision(6) << std::left << massFinalSolid / massTotsolid_initial;
     std::cout << std::endl;
+
+    count_file_ = n_steps_file_;
+    MyStepPrintTotal(final_time,final_status);
 }
 
 void ChangeDimensionsFunction()

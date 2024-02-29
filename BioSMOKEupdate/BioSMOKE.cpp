@@ -836,7 +836,7 @@ int main(int argc, char** argv)
             ode_solver.Solution(x);
         }
 
-        PrintFinalStatusTGA();
+        PrintFinalStatusTGA(x);
 
     }
     else if (typeAnalysis == "Total_Analysis")
@@ -1019,7 +1019,7 @@ int main(int argc, char** argv)
         {
             ode_solver.Solution(x);
         }
-        PrintFinalStatusTotal();
+        PrintFinalStatusTotal(x);
     }        
     else
         OpenSMOKE::FatalErrorMessage("Unknown simulation type");
