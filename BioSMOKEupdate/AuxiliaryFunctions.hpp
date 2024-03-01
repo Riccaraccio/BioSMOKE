@@ -92,7 +92,7 @@ void MyStepPrintTGA(const double t, const Eigen::VectorXd& Y)
     unsigned int NSolid_ = thermodynamicsSolidMapXML->number_of_solid_species();
     unsigned int NGas_ = thermodynamicsSolidMapXML->number_of_gas_species();
 
-    if (count_ode_video_ % n_steps_video_ == 1)
+    if (count_ode_video_ % n_steps_video_ == 1 || t == final_time)
     {
         if (count_ode_video_ % (n_steps_video_ * 1000) == 1)
         {
@@ -111,7 +111,7 @@ void MyStepPrintTGA(const double t, const Eigen::VectorXd& Y)
         std::cout << std::endl;
     }
 
-    if (count_file_ == n_steps_file_)
+    if (count_file_ == n_steps_file_ || t == final_time)
     {
 
         TG << std::setw(25) << std::left << t << std::setw(25) << std::left << t / 60
@@ -142,22 +142,6 @@ void MyStepPrintTGA(const double t, const Eigen::VectorXd& Y)
     }
     count_ode_video_++;
     count_file_++;
-}
-
-void PrintFinalStatusTGA(const Eigen::VectorXd& final_status)
-{
-
-    // PRINT LAST INTEGRATION STEP
-    std::cout << std::fixed << std::setw(18) << std::left << count_ode_video_;
-    std::cout << std::scientific << std::setw(18) << std::setprecision(6) << std::left << timeOld;
-    std::cout << std::scientific << std::setw(18) << std::setprecision(6) << std::left << T_TGA;
-    std::cout << std::scientific << std::setw(18) << std::setprecision(6) << std::left << massFinalSolid / massTotsolid_initial;
-    std::cout << std::endl;
-
-    // PRINT FINAL STATUS ON FILEs
-
-    count_file_ = n_steps_file_;
-    MyStepPrintTGA(final_time, final_status);
 }
 
 
@@ -390,7 +374,7 @@ void MyStepPrintTotal(const double t, const Eigen::VectorXd& x)
             massGasSpeciesFlowrate_old[j - solid_species] = massGasSpeciesFlowrate[j - solid_species];
     }
 
-    if (count_ode_video_ % n_steps_video_ == 1)
+    if (count_ode_video_ % n_steps_video_ == 1 || t == final_time)
     {
         if (count_ode_video_ % (n_steps_video_ * 1000) == 1)
         {
@@ -409,7 +393,7 @@ void MyStepPrintTotal(const double t, const Eigen::VectorXd& x)
     }
 
 
-    if (count_file_ == n_steps_file_)
+    if (count_file_ == n_steps_file_ || t == final_time)
     {
         const int width = 20;
 
@@ -568,17 +552,6 @@ void MyStepPrintTotal(const double t, const Eigen::VectorXd& x)
     //
     //gasFlowRateSelective << std::endl;
 
-}
-
-void PrintFinalStatusTotal(const Eigen::VectorXd& final_status)    
-{
-    std::cout << std::fixed << std::setw(18) << std::left << count_ode_video_;
-    std::cout << std::scientific << std::setw(18) << std::setprecision(6) << std::left << t_old;
-    std::cout << std::scientific << std::setw(18) << std::setprecision(6) << std::left << massFinalSolid / massTotsolid_initial;
-    std::cout << std::endl;
-
-    count_file_ = n_steps_file_;
-    MyStepPrintTotal(final_time,final_status);
 }
 
 void ChangeDimensionsFunction()
