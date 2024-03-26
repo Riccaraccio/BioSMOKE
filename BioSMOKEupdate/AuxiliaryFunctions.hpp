@@ -934,6 +934,7 @@ void CalculateProperties()
 
         for (int j = 1; j <= gas_species; j++)
             //Diff_eff[i][j] = epsi_var[i]/tau*((Dmix[i][j]*Diff_Knudsen[i][j])/(Dmix[i][j]+Diff_Knudsen[i][j]));
+            //Diff_eff[i][j] = pow(epsi_var[i],3/2) * Dmix[i][j] // Darcy diffusion
             Diff_eff[i][j] = Dmix[i][j] * 0.25;
 
         Hmix[i] = thermodynamicsMapXML->hMolar_Mixture_From_MoleFractions(xGasFraction.GetHandle());
