@@ -261,6 +261,10 @@ int main(int argc, char** argv)
     }
     else OpenSMOKE::FatalErrorMessage("Unknown simulation type: " + typeAnalysis + "  Conditions:TG or Total_Analysis");
 
+    if (dictionaries(main_dictionary_name_).CheckOption("@PrintRates") == true) {
+        PrintRates = true;
+    }
+
     // Read initial conditions
     {
         std::string name_of_gas_status_subdictionary;
@@ -315,6 +319,8 @@ int main(int argc, char** argv)
     ChangeDimensions(gas_species, &cGas_TGA, true);
     ChangeDimensions(gas_species, &Kc, true);
     ChangeDimensions(gas_species, &Diff, true);
+    ChangeDimensions(kineticsSolidMapXML[0]->NumberOfReactions(), &TotalRates, true);
+    ChangeDimensions(kineticsSolidMapXML[0]->NumberOfReactions(), &Rates, true);
 
     // Calculate the properties for the entering gas
     thermodynamicsMapXML->SetPressure(Pbulk);       transportMapXML->SetPressure(Pbulk);
@@ -328,9 +334,10 @@ int main(int argc, char** argv)
 
     // Mass transfer coefficents calculated trought the Colburn analogy
     for (int i = 1; i <= gas_species; i++) {
-        Kc[i] = hext * pow((pow(Diff[i], 2) / (pow(ExtGas_lambda, 2) * rhoGas * ExtGas_cp)), 1.0 / 3.0);
+        //Kc[i] = hext * pow((pow(Diff[i], 2) / (pow(ExtGas_lambda, 2) * rhoGas * ExtGas_cp)), 1.0 / 3.0);
+        Kc[i] = 2.0 * Diff[i] / (2 * raggioTot);
     }
-
+ 
     for (int i = 1; i <= P.Size(); i++)
         P[i] = Psolid;
 
@@ -771,6 +778,22 @@ int main(int argc, char** argv)
             QreactShell << std::endl;
 
         }
+ 
+        if (PrintRates == true)
+        {
+            RateSensitivity.open("Output/RateSensitivity.ris", std::ios::out);
+            RateSensitivity.setf(std::ios::scientific);
+
+            unsigned int counter = 1;
+            OpenSMOKE::PrintTagOnASCIILabel(25, RateSensitivity, "t[s]", counter);
+ 
+            for (int i = 1; i <= kineticsSolidMapXML[0]->NumberOfReactions(); i++) {
+                string number = boost::lexical_cast<string>(i);
+                OpenSMOKE::PrintTagOnASCIILabel(25, RateSensitivity, "Reaction_" + number, counter);
+            }
+            RateSensitivity << endl;
+        }
+
     }
 
 
@@ -959,7 +982,7 @@ int main(int argc, char** argv)
 			}
         }
 
-     
+
         ChangeDimensionsFunction();
         // Create the solver
         typedef OdeSMOKE::KernelDense<OpenSMOKE::ODESystem_Interface> denseOde;
@@ -1013,7 +1036,7 @@ int main(int argc, char** argv)
         ode_solver.SetMinimumValues(yMin);
         ode_solver.SetMaximumValues(yMax);
         
-        
+
         // Solve the system
         double tStart = OpenSMOKE::OpenSMOKEGetCpuTime();
         OdeSMOKE::OdeStatus status = ode_solver.Solve(final_time);

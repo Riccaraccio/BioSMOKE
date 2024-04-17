@@ -1127,9 +1127,8 @@ void CalculateKinetics()
                 kineticsSolidMapXML[k]->FormationRates(RGas.GetHandle(), RSolid.GetHandle());
 
                 Rates = kineticsSolidMapXML[k]->GiveMeReactionRates();
-         
+
                 for (int j = 1; j <= NR; j++) {
-                    cout << Rates[j] << endl;
                     TotalRates[j] += Rates[j];
                 }
 
