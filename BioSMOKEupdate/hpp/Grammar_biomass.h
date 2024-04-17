@@ -59,6 +59,9 @@ namespace OpenSMOKE
 																OpenSMOKE::SINGLE_DICTIONARY,
 																"Dictionary containing the numerical parameters for porous medium",
 																false));
+            AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@PrintRates", OpenSMOKE::SINGLE_DICTIONARY,
+                                                               "Option to file the total value for each reaction",
+                                                               false));
         }
     };
 }
