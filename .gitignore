@@ -363,3 +363,8 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 GPUCache/
+GPUCache/data_0
+GPUCache/data_1
+GPUCache/data_2
+GPUCache/data_3
+GPUCache/index
