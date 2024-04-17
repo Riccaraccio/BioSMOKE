@@ -475,6 +475,12 @@ void MyStepPrintTotal(const double t, const Eigen::VectorXd& x)
         QreactTot << std::setw(25) << std::left << t
             << std::setw(25) << std::left << HeatReactionTot << "\n";
 
+        RateSensitivity << std::setw(25) << std::left << t;
+        for (int j = 1; j <= kineticsSolidMapXML[0]->NumberOfReactions(); j++) {
+            RateSensitivity << std::setw(25) << TotalRates[j];
+        }
+        RateSensitivity << "\n";
+
         temp << std::setw(25) << std::left << t;
         for (int j = 1; j <= intervalli; j++)
         {
@@ -1027,7 +1033,7 @@ void CalculateProperties()
         for (int j = 1; j <= solid_species; j++)
             cp_solid_species[j] = cp_tot[j + gas_species] / MW_tot[j];  //Cp_solid_species [J/kg/K];
 
-        cPsolid_mix[i] = Dot(cp_solid_species, omegaSolidFraction);
+        cPsolid_mix[i] = 1600; //Dot(cp_solid_species, omegaSolidFraction);
 
 
         for (int j = 1; j <= solid_species; j++)
@@ -1054,6 +1060,10 @@ void CalculateKinetics()
     double T_K = 300.;
     double P_Pa = 1.e5;
 
+    int NR = kineticsSolidMapXML[0]->NumberOfReactions();
+    for (int j = 1; j <= NR; j++) {
+        TotalRates[j] = 0;
+    }
 
     for (int i = 1; i <= intervalli; i++)
     {
@@ -1115,6 +1125,13 @@ void CalculateKinetics()
                 OpenSMOKE::OpenSMOKEVectorDouble RGas(thermodynamicsSolidMapXML->number_of_gas_species());
                 OpenSMOKE::OpenSMOKEVectorDouble RSolid(thermodynamicsSolidMapXML->number_of_solid_species());
                 kineticsSolidMapXML[k]->FormationRates(RGas.GetHandle(), RSolid.GetHandle());
+
+                Rates = kineticsSolidMapXML[k]->GiveMeReactionRates();
+         
+                for (int j = 1; j <= NR; j++) {
+                    cout << Rates[j] << endl;
+                    TotalRates[j] += Rates[j];
+                }
 
                 for (int j = 1; j <= gas_species + solid_species; j++)
                 {

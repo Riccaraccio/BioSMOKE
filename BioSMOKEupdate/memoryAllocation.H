@@ -256,3 +256,7 @@ unsigned int n_steps_video_ = 100; //10
 unsigned int count_ode_video_ = 1;
 unsigned int n_steps_file_ = 5; //30
 unsigned int count_file_ = 1;   //30
+
+OpenSMOKE::OpenSMOKEVectorDouble TotalRates;
+OpenSMOKE::OpenSMOKEVectorDouble Rates;
+bool PrintRates;
