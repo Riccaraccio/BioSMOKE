@@ -947,10 +947,14 @@ int main(int argc, char** argv)
 
         for (int i = 1; i <= intervalli; i++)
         {
-            for (int j = 0; j < (solid_species); j++)
-                massSolidSpeciesTotal_fromR[j] += x0[j + Neq * (i - 1)];
-            for (int j = solid_species; j < (gas_species); j++)
-                massGasSpeciesTotal_fromR[j] += x0[j + Neq * (i - 1)];
+            for (int j = 0; j < gas_species + solid_species; j++)
+            {
+                if (j < solid_species) 
+                    massSolidSpeciesTotal_fromR[j + 1] += x0[j + Neq * (i - 1)];
+
+                else
+                    massGasSpeciesTotal_fromR[j + 1 - solid_species] += x0[j + Neq * (i - 1)];
+			}
         }
 
      
