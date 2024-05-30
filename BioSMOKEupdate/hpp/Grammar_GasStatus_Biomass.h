@@ -190,6 +190,14 @@ namespace OpenSMOKE
                             omega[thermodynamicsMapXML.IndexOfSpecies(names[i])] = values[i]/sum;
                     
                 }
+
+                //check if any of the provided species is less than zero
+                for ( unsigned int i = 1; i <= omega.Size();i++)
+				{
+					if(omega[i]<0)
+						OpenSMOKE::FatalErrorMessage("Check the provided compositions");
+				}
+
             }
         }
                 

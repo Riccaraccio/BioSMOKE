@@ -280,6 +280,12 @@ namespace OpenSMOKE
                     }
                 }
 
+                //Check if any of the composition is less than zero
+                for (int j = 1; j <= omega.Size(); j++) {
+                    if (omega[j] < 0) {
+                        OpenSMOKE::FatalErrorMessage("Check the provided composition");
+                    }
+                }
             }
 
 
