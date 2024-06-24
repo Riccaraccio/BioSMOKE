@@ -334,6 +334,8 @@ int main(int argc, char** argv)
     for (int i = 1; i <= P.Size(); i++)
         P[i] = Psolid;
 
+    double rhoGas_internal = Psolid * MW_gas_in / PhysicalConstants::R_J_kmol / Tsolid;
+
     // MW_tot = [MW_solid, MW_gas]
     for (unsigned int j = 0; j < solid_species; j++)
         MW_tot[j + 1] = thermodynamicsSolidMapXML->MW(gas_species + j);
@@ -789,7 +791,7 @@ int main(int argc, char** argv)
             if (j < solid_species)
                 x0[j] = omegaIn_solid[j + 1] * rhoSolid *1;
             else if (j >= solid_species && j < solid_species + gas_species)
-                x0[j] = omegaIn_gas[j + 1 - solid_species] * rhoGas *1;
+                x0[j] = omegaIn_gas[j + 1 - solid_species] * rhoGas_internal *1;
             else
                 x0[j] = Tsolid;
         }
@@ -913,7 +915,7 @@ int main(int argc, char** argv)
                 if (j < solid_species)
                     x0[j + Neq * (i - 1)] = omegaIn_solid[j + 1] * rhoSolid * V[i] * (1 - epsi_var[i]);
                 else if (j >= solid_species && j < solid_species + gas_species)
-                    x0[j + Neq * (i - 1)] = omegaIn_gas[j + 1 - solid_species] * rhoGas * V[i] * epsi_var[i];
+                    x0[j + Neq * (i - 1)] = omegaIn_gas[j + 1 - solid_species] * rhoGas_internal * V[i] * epsi_var[i];
                 else
                     x0[j + Neq * (i - 1)] = Tsolid;
             }
