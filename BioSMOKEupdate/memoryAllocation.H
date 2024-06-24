@@ -260,3 +260,4 @@ unsigned int count_file_ = 1;   //30
 OpenSMOKE::OpenSMOKEVectorDouble TotalRates;
 OpenSMOKE::OpenSMOKEVectorDouble Rates;
 bool PrintRates;
+OpenSMOKE::OpenSMOKEVectorDouble TotalHeat_R;

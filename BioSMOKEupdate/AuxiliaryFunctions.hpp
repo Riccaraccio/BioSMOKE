@@ -563,25 +563,36 @@ void MyStepPrintTotal(const double t, const Eigen::VectorXd& x)
             std::string type = output_species_[k];
             int index = thermodynamicsSolidMapXML->IndexOfSpecies(type);
             species[k] << std::setw(25) << std::left << t;
-            if (index <= NGas_)
+            //if (index <= NGas_)
+            //{
+            //    for (int j = 1; j <= intervalli; j++)
+            //    {
+            //        species[k] << std::setw(25) << std::left << massFraction[j][index + NSolid_];
+            //        //species[k] << std::setw(25) << std::left << massFraction_Shellmassbased[j][index + NSolid_];
+            //    }
+            //}
+            //else
+            //{
+            //    //for (int j = 1; j <= intervalli; j++)
+            //    //{
+            //    //    species[k] << std::setw(25) << std::left << massFraction[j][index - NGas_];
+            //    //    //species[k] << std::setw(25) << std::left << massFraction_Shellmassbased[j][index - NGas_];
+            //    //}
+            //}
+
+            const Eigen::SparseMatrix<double>& mat = kineticsSolidMapXML[0]->stoichiometry().stoichiometric_matrix_products();
+            for (int i = 1; i <= kineticsSolidMapXML[0]->NumberOfReactions(); i++)
             {
-                for (int j = 1; j <= intervalli; j++)
-                {
-                    species[k] << std::setw(25) << std::left << massFraction[j][index + NSolid_];
-                    //species[k] << std::setw(25) << std::left << massFraction_Shellmassbased[j][index + NSolid_];
-                }
-            }
-            else
-            {
-                for (int j = 1; j <= intervalli; j++)
-                {
-                    species[k] << std::setw(25) << std::left << massFraction[j][index - NGas_];
-                    //species[k] << std::setw(25) << std::left << massFraction_Shellmassbased[j][index - NGas_];
-                }
+   
+                species[k] << std::setw(25) << std::left << TotalRates[i] * kineticsSolidMapXML[0]->stoichiometry().stoichiometric_matrix_products().coeff(i - 1, index - 1);
             }
             species[k] << std::endl;
         }
 
+        Heat_reaction << std::setw(25) << std::left << t;
+        for (int j = 1; j <= kineticsSolidMapXML[0]->NumberOfReactions(); j++) 
+            Heat_reaction << std::setw(25) << TotalHeat_R[j];
+        Heat_reaction << std::endl;
 
         count_file_ = 0;
 
@@ -1033,7 +1044,7 @@ void CalculateProperties()
         for (int j = 1; j <= solid_species; j++)
             cp_solid_species[j] = cp_tot[j + gas_species] / MW_tot[j];  //Cp_solid_species [J/kg/K];
 
-        cPsolid_mix[i] = 1600; //Dot(cp_solid_species, omegaSolidFraction);
+        cPsolid_mix[i] = Dot(cp_solid_species, omegaSolidFraction);
 
 
         for (int j = 1; j <= solid_species; j++)
@@ -1063,6 +1074,7 @@ void CalculateKinetics()
     int NR = kineticsSolidMapXML[0]->NumberOfReactions();
     for (int j = 1; j <= NR; j++) {
         TotalRates[j] = 0;
+        TotalHeat_R[j] = 0;
     }
 
     for (int i = 1; i <= intervalli; i++)
@@ -1121,14 +1133,15 @@ void CalculateKinetics()
                 kineticsSolidMapXML[k]->SetTemperature(T_K);
                 kineticsSolidMapXML[k]->ReactionEnthalpiesAndEntropies();
                 kineticsSolidMapXML[k]->ReactionRates(cGas.GetHandle(), cSolid.GetHandle()); //kmol/m3/s
-
+                    
                 OpenSMOKE::OpenSMOKEVectorDouble RGas(thermodynamicsSolidMapXML->number_of_gas_species());
                 OpenSMOKE::OpenSMOKEVectorDouble RSolid(thermodynamicsSolidMapXML->number_of_solid_species());
                 kineticsSolidMapXML[k]->FormationRates(RGas.GetHandle(), RSolid.GetHandle());
 
                 Rates = kineticsSolidMapXML[k]->GiveMeReactionRates();
 
-                for (int j = 1; j <= NR; j++) {
+                for (int j = 1; j <= NR; j++){
+                    TotalHeat_R[j] += -Rates[j] * V[i] * (1 - epsi_var[i]) * kineticsSolidMapXML[0]->reaction_h_over_RT(j - 1) * PhysicalConstants::R_J_kmol * T[i];
                     TotalRates[j] += Rates[j];
                 }
 

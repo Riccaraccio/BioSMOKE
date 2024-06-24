@@ -19,3 +19,4 @@ std::vector <ofstream> species;
 ofstream QreactShell;
 ofstream QreactTot;
 ofstream RateSensitivity;
+ofstream Heat_reaction;

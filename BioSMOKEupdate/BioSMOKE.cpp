@@ -439,7 +439,7 @@ int main(int argc, char** argv)
             unsigned int counter = 1;
             OpenSMOKE::PrintTagOnASCIILabel(25, TG, "t[s]", counter);
             OpenSMOKE::PrintTagOnASCIILabel(25, TG, "t[min]", counter);
-            OpenSMOKE::PrintTagOnASCIILabel(25, TG, "T[°C]", counter);
+            OpenSMOKE::PrintTagOnASCIILabel(25, TG, "T[ï¿½C]", counter);
             OpenSMOKE::PrintTagOnASCIILabel(25, TG, "T[K]", counter);
             OpenSMOKE::PrintTagOnASCIILabel(25, TG, "TG", counter);
 
@@ -473,7 +473,7 @@ int main(int argc, char** argv)
             unsigned int counter = 1;
             OpenSMOKE::PrintTagOnASCIILabel(25, yieldSpecies, "t[s]", counter);
             OpenSMOKE::PrintTagOnASCIILabel(25, yieldSpecies, "t[min]", counter);
-            OpenSMOKE::PrintTagOnASCIILabel(25, yieldSpecies, "T[°C]", counter);
+            OpenSMOKE::PrintTagOnASCIILabel(25, yieldSpecies, "T[ï¿½C]", counter);
             OpenSMOKE::PrintTagOnASCIILabel(25, yieldSpecies, "T[K]", counter);
 
             unsigned int NS_ = thermodynamicsSolidMapXML->NumberOfSpecies();
@@ -497,6 +497,31 @@ int main(int argc, char** argv)
             yieldSpecies << std::endl;
 
         }
+
+        {
+
+            const boost::filesystem::path file_name = ("Output/gasFlowRate.Cyl");
+            gasFlowRate.open(file_name.c_str(), std::ios::out);
+            gasFlowRate.setf(std::ios::scientific);
+
+            unsigned int counter = 1;
+            OpenSMOKE::PrintTagOnASCIILabel(25, gasFlowRate, "t[s]", counter);
+
+            unsigned int NS_ = thermodynamicsMapXML->NumberOfSpecies();
+            std::vector<unsigned int> widths_of_formation_rates_species_;
+            widths_of_formation_rates_species_.resize(NS_);
+            for (unsigned int i = 0; i < NS_; i++)
+                widths_of_formation_rates_species_[i] = OpenSMOKE::CalculateSpeciesFieldWidth(thermodynamicsMapXML->NamesOfSpecies()[i], NS_);
+
+            for (int i = 0; i < NS_; i++)
+            {
+                OpenSMOKE::PrintTagOnASCIILabel(25, gasFlowRate, thermodynamicsMapXML->NamesOfSpecies()[i] + "[kg/s]", counter);
+            }
+
+            gasFlowRate << std::endl;
+        }
+
+
     }
     if (typeAnalysis == "Total_Analysis")
     {
@@ -735,12 +760,19 @@ int main(int argc, char** argv)
 
                 unsigned int counter = 1;
                 OpenSMOKE::PrintTagOnASCIILabel(25, species[i], "t[s]", counter);
+
                 //OpenSMOKE::PrintTagOnASCIILabel(25, temp, "t[min]", counter);
 
-                for (int j = 1; j <= intervalli; j++)
+                //for (int j = 1; j <= intervalli; j++)
+                //{
+                //    string shell = boost::lexical_cast<string>(j);
+                //    OpenSMOKE::PrintTagOnASCIILabel(25, species[i], "xShell_" + shell + "[wt]", counter);
+                //}
+
+                for (int j = 1; j <= kineticsSolidMapXML[0]->NumberOfReactions(); j++)
                 {
-                    string shell = boost::lexical_cast<string>(j);
-                    OpenSMOKE::PrintTagOnASCIILabel(25, species[i], "xShell_" + shell + "[wt]", counter);
+                    string number = boost::lexical_cast<string>(j);
+                    OpenSMOKE::PrintTagOnASCIILabel(25, species[i], "Reaction_" + number, counter);
                 }
 
                 species[i] << std::endl;
@@ -792,6 +824,19 @@ int main(int argc, char** argv)
                 OpenSMOKE::PrintTagOnASCIILabel(25, RateSensitivity, "Reaction_" + number, counter);
             }
             RateSensitivity << endl;
+        }
+
+        {
+            unsigned int counter = 1;
+            Heat_reaction.open("Output/HeatReactions.out", std::ios::out);
+            Heat_reaction.setf(std::ios::scientific);
+            ChangeDimensions(solid_reactions, &TotalHeat_R, true);
+            OpenSMOKE::PrintTagOnASCIILabel(25, Heat_reaction, "t[s]", counter);
+            for (int i = 0; i < solid_reactions; i++)
+            {
+                OpenSMOKE::PrintTagOnASCIILabel(25, Heat_reaction, "Qr" + boost::lexical_cast<string>(i), counter);
+            }
+            Heat_reaction << endl;
         }
 
     }
@@ -926,8 +971,8 @@ int main(int argc, char** argv)
             epsi_var[i] = epsi;
 
         // Initial Conditions
-        // Il vettore delle x0=m_0_j è così definito per l'i-esimo intervallo: 
-        // n°specie solide + n°species gas + temperatura
+        // Il vettore delle x0=m_0_j ï¿½ cosï¿½ definito per l'i-esimo intervallo: 
+        // nï¿½specie solide + nï¿½species gas + temperatura
 
         Eigen::VectorXd x0(Ntot_eq), x;
 
@@ -974,12 +1019,11 @@ int main(int argc, char** argv)
         {
             for (int j = 0; j < gas_species + solid_species; j++)
             {
-                if (j < solid_species) 
+                if (j < solid_species)
                     massSolidSpeciesTotal_fromR[j + 1] += x0[j + Neq * (i - 1)];
-
                 else
                     massGasSpeciesTotal_fromR[j + 1 - solid_species] += x0[j + Neq * (i - 1)];
-			}
+            }
         }
 
 
@@ -991,8 +1035,8 @@ int main(int argc, char** argv)
 
         // Default ODE parameters
         OpenSMOKE::ODE_Parameters* ode_parameters_ = new OpenSMOKE::ODE_Parameters;
-        ode_parameters_->SetAbsoluteTolerance(1e-14);
-        ode_parameters_->SetRelativeTolerance(1e-9);
+        ode_parameters_->SetAbsoluteTolerance(1e-16);
+        ode_parameters_->SetRelativeTolerance(1e-11);
 
 
         // Set the ODE system of equations function and print function
