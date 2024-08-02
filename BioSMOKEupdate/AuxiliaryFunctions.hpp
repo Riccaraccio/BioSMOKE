@@ -706,7 +706,6 @@ void ChangeDimensionsFunction()
     ChangeDimensions(gas_species, &massFinalGasSpecies_total, true);
     ChangeDimensions(gas_species, &moleFinalGasSpecies_total, true);
     ChangeDimensions(gas_species, &omegaI, true);
-    ChangeDimensions(gas_species, &Kc, true);
 
     ChangeDimensions(gas_species, &massGasSpeciesTotal, true);
     ChangeDimensions(solid_species, &massSolidSpeciesTotal, true);
@@ -1241,11 +1240,11 @@ void CreateMaterialBalances()
 
     // Calculate interfacial properties
     for (int i = 1; i <= gas_species; i++) {
-        omegaI[i] = (Kc[i] * omegaIn_gas[i] + Diff_eff[intervalli][i] * massFraction[intervalli][i] / (raggio[intervalli] - r[intervalli])) /
+        omegaI[i] = (Kc[i] * omegaIn_gas[i] + Diff_eff[intervalli][i] * massFraction[intervalli][i + solid_species] / (raggio[intervalli] - r[intervalli])) /
             (Kc[i] + Diff_eff[intervalli][i] / (raggio[intervalli] - r[intervalli]));
     }
     double MW_gasI = thermodynamicsMapXML->MolecularWeight_From_MassFractions(omegaI.GetHandle());
-    double rhoGasI = P[intervalli] * MW_gasI / PhysicalConstants::R_J_kmol * T[intervalli]; // approx
+    double rhoGasI = P[intervalli] * MW_gasI / PhysicalConstants::R_J_kmol / T[intervalli]; 
 
     // r=R  ---> m=mS  
     for (int i = 1; i <= (solid_species + gas_species); i++)
@@ -1265,7 +1264,7 @@ void CreateMaterialBalances()
             massConvection_out[intervalli] = -Da / dyn_viscosity[intervalli] * rho_gas[intervalli] * S[intervalli] * (Psolid - P[intervalli]) / (raggio[intervalli] - r[intervalli]);
 
             JD_out[intervalli][i - solid_species] = -Kc[i - solid_species] * S[intervalli]* (rhoGas * omegaIn_gas[i - solid_species] - rhoGasI * omegaI[i - solid_species]);
-            
+
             dmass[intervalli][i] = JD_in[intervalli][i - solid_species] - JD_out[intervalli][i - solid_species] + (FormationRate[intervalli][i] * MW_tot[i] * V[intervalli] * (1 - epsi_var[intervalli])) + (massConvection_in[intervalli] * massFraction[intervalli - 1][i] - massConvection_out[intervalli] * massFraction[intervalli][i]);
 
             massDiffusion_out += JD_out[intervalli][i - solid_species];
