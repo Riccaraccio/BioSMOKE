@@ -101,7 +101,7 @@ int main(int argc, char** argv)
     boost::filesystem::path executable_file = boost::filesystem::system_complete(argv[0]);
     boost::filesystem::path executable_folder = executable_file.parent_path();
 
-    OpenSMOKE::OpenSMOKE_logo("bioSMOKE 2024", "Riccardo Caraccio (riccardo.caraccio@polimi.it)");
+    OpenSMOKE::OpenSMOKE_logo("BioSMOKE", "Riccardo Caraccio (riccardo.caraccio@polimi.it)");
 
     unsigned int max_number_allowed_species = 100000;
     //OpenSMOKE::OpenSMOKE_CheckLicense(executable_folder, "bioSMOKE", max_number_allowed_species);
@@ -432,7 +432,7 @@ int main(int argc, char** argv)
             unsigned int counter = 1;
             OpenSMOKE::PrintTagOnASCIILabel(25, TG, "t[s]", counter);
             OpenSMOKE::PrintTagOnASCIILabel(25, TG, "t[min]", counter);
-            OpenSMOKE::PrintTagOnASCIILabel(25, TG, "T[°C]", counter);
+            OpenSMOKE::PrintTagOnASCIILabel(25, TG, "T[ï¿½C]", counter);
             OpenSMOKE::PrintTagOnASCIILabel(25, TG, "T[K]", counter);
             OpenSMOKE::PrintTagOnASCIILabel(25, TG, "TG", counter);
 
@@ -466,7 +466,7 @@ int main(int argc, char** argv)
             unsigned int counter = 1;
             OpenSMOKE::PrintTagOnASCIILabel(25, yieldSpecies, "t[s]", counter);
             OpenSMOKE::PrintTagOnASCIILabel(25, yieldSpecies, "t[min]", counter);
-            OpenSMOKE::PrintTagOnASCIILabel(25, yieldSpecies, "T[°C]", counter);
+            OpenSMOKE::PrintTagOnASCIILabel(25, yieldSpecies, "T[ï¿½C]", counter);
             OpenSMOKE::PrintTagOnASCIILabel(25, yieldSpecies, "T[K]", counter);
 
             unsigned int NS_ = thermodynamicsSolidMapXML->NumberOfSpecies();
@@ -903,8 +903,8 @@ int main(int argc, char** argv)
             epsi_var[i] = epsi;
 
         // Initial Conditions
-        // Il vettore delle x0=m_0_j è così definito per l'i-esimo intervallo: 
-        // n°specie solide + n°species gas + temperatura
+        // Il vettore delle x0=m_0_j ï¿½ cosï¿½ definito per l'i-esimo intervallo: 
+        // nï¿½specie solide + nï¿½species gas + temperatura
 
         Eigen::VectorXd x0(Ntot_eq), x;
 
