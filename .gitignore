@@ -363,3 +363,8 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 GPUCache/
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+BioSMOKEupdate/.vscode/settings.json
+BioSMOKEupdate/.vscode/c_cpp_properties.json
+.vscode/tasks.json
