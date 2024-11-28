@@ -23,7 +23,13 @@ message(STATUS "Building project in mode: ${CMAKE_BUILD_TYPE}")
 # --------------------------------------------------------------------
 # Options
 # --------------------------------------------------------------------
-
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Gw")  # -> whole program global optimization
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /GS-") # -> buffer security check: no 
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /GL")  # -> whole program optimization: enable link-time code generation (disables Zi)
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /GF")  # -> enable string pooling)
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")  # -> enable string pooling)
+endif()
 # --------------------------------------------------------------------
 # Compulsory libraries
 # --------------------------------------------------------------------
@@ -40,14 +46,14 @@ find_package(
              chrono)
 
 # Eigen (Compulsory)
-find_package(Eigen3 REQUIRED)
+find_package(Eigen3 REQUIRED NO_MODULE)
 
 # OpenSmoke++ (Compulsory)
 find_package(OpenSMOKEpp REQUIRED)
 
 set(COMPULSORY_LIBRARIES ${Boost_LIBRARIES})
 
-set(COMPULSORY_INCLUDE ${Boost_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR}
+set(COMPULSORY_INCLUDE ${Boost_INCLUDE_DIRS}
                        ${OPENSMOKE_INCLUDE_DIR} ${Config_INCLUDE_DIR})
 
 # --------------------------------------------------------------------

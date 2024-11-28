@@ -6,8 +6,7 @@ target_include_directories(
   BioSMOKEpp.sh
   PUBLIC ${PROJECT_SOURCE_DIR} ${COMPULSORY_INCLUDE} ${LINEAR_ALGEBRA_INCLUDE} ${CMAKE_CURRENT_LIST_DIR}/hpp)
 
-target_link_libraries(BioSMOKEpp.sh ${COMPULSORY_LIBRARIES}
-                      ${LINEAR_ALGEBRA_LIB})
+target_link_libraries(BioSMOKEpp.sh ${COMPULSORY_LIBRARIES} Eigen3::Eigen ${LINEAR_ALGEBRA_LIB})
 
 target_compile_definitions(
   BioSMOKEpp.sh

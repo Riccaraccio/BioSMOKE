@@ -86,7 +86,7 @@ std::vector<OpenSMOKE::KineticsMap_Solid_CHEMKIN*> kineticsSolidMapXML;
 #include "hpp/Grammar_TotalSimulation_Biomass.h"
 
 // License
-#include "license/OpenSMOKELicenseUtilities.hpp"
+// #include "license/OpenSMOKELicenseUtilities.hpp"
 
 using namespace std;    
 #include "createOutput.H"

@@ -6,6 +6,8 @@
 build/
 BioSMOKEupdate/*.vcxproj
 BioSMOKEupdate/*.vcxproj.filters
+out/
+.vs/
 # User-specific files
 *.rsuser
 *.suo
