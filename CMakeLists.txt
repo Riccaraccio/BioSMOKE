@@ -11,7 +11,7 @@ project(
 
 # Set module path in order to use custom CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source)
+set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/source)
 set(CMAKE_CXX_STANDARD 17)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -102,5 +102,5 @@ add_link_options(-fPIC -m64 -O3)
 # --------------------------------------------------------------------
 # Project Tree directory
 # --------------------------------------------------------------------
-
+message(STATUS "${PROJECT_SOURCE_DIR}")
 add_subdirectory(${PROJECT_SOURCE_DIR})
