@@ -88,6 +88,11 @@ if(OPENSMOKE_USE_OPENBLAS)
 endif()
 
 # --------------------------------------------------------------------
+# Include install definitions
+# --------------------------------------------------------------------
+include(${CMAKE_MODULE_PATH}/InstallationOptions.cmake)
+
+# --------------------------------------------------------------------
 # Project Tree directory
 # --------------------------------------------------------------------
 set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source)

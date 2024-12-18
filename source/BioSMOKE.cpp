@@ -3,21 +3,9 @@
 
 // OpenSMOKE
 #include <OpenSMOKEpp>
-// CHEMKIN maps
 #include <maps/Maps_CHEMKIN>
 #include <maps/ThermodynamicsMap_Solid_CHEMKIN.h>
-
-// Reactor utilities
 #include <idealreactors/utilities/Utilities>
-#include <surfacereactors/utilities/Utilities>
-#include <utilities/ropa/OnTheFlyROPA.h>
-
-// Numerical parameters
-#include <math/native-dae-solvers/parameters/DaeSolver_Parameters.h>
-#include <math/native-nls-solvers/NonLinearSolver.h>
-#include <math/native-nls-solvers/KernelSparse.h>
-#include <math/native-ode-solvers/MultiValueSolver>
-#include <math/external-ode-solvers/ODE_Parameters.h>
 
 // Internal headers
 #include "grammar/Grammar_BioSMOKE.h"

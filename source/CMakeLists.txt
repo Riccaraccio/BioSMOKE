@@ -1,9 +1,12 @@
 add_executable(BioSMOKEpp ${CMAKE_CURRENT_LIST_DIR}/BioSMOKE.cpp)
 
-target_include_directories(BioSMOKEpp PUBLIC ${PROJECT_SOURCE_DIR} ${OPENSMOKE_INCLUDE_DIR} ${COMPULSORY_INCLUDE})
+target_include_directories(BioSMOKEpp
+  PUBLIC ${PROJECT_SOURCE_DIR}
+         ${OPENSMOKE_INCLUDE_DIR}
+         ${COMPULSORY_INCLUDE}
+)
 
 target_link_libraries(BioSMOKEpp
-  ${COMPULSORY_LIBRARIES}
   Eigen3::Eigen
   Boost::date_time
   Boost::filesystem
@@ -28,4 +31,16 @@ target_compile_definitions(
          OPENSMOKE_USE_ODEPACK=0
          OPENSMOKE_USE_DVODE=0
          OPENSMOKE_USE_DASPK=0
-         OPENSMOKE_USE_MEBDF=0)
+         OPENSMOKE_USE_MEBDF=0
+)
+
+# --------------------------------------------------------------------
+# Install
+# --------------------------------------------------------------------
+install(TARGETS BioSMOKEpp
+  RUNTIME DESTINATION ${INSTALL_BIN_DIR}
+  LIBRARY DESTINATION ${INSTALL_LIB_DIR}
+  ARCHIVE DESTINATION ${INSTALL_LIB_DIR}
+)
+
+install_shared_libs(BioSMOKEpp)
