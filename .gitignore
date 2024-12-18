@@ -401,3 +401,5 @@ FodyWeavers.xsd
 
 # ADDITIONAL
 out/
+build/
+compile_commands.json

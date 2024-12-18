@@ -4,37 +4,51 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(
-  BioSMOKE
+  BioSMOKEpp
   DESCRIPTION ""
-  LANGUAGES CXX
-  VERSION 0.1.0) 
+  LANGUAGES C CXX Fortran
+  VERSION 0.22.0)
 
 # Set module path in order to use custom CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/source)
-set(CMAKE_CXX_STANDARD 17)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+# ----------------------------------------------------------------------------
+# Operating system
+# ----------------------------------------------------------------------------
+# Detect operating system and define SYSTEM macros
+message(STATUS "We are on a ${CMAKE_SYSTEM_NAME} system")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set(SYSTEM_DEFINITIONS SYSTEM_LINUX)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(SYSTEM_DEFINITIONS SYSTEM_DARWIN)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "AIX")
+  set(SYSTEM_DEFINITIONS SYSTEM_AIX)
+elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+  set(SYSTEM_DEFINITIONS SYSTEM_WINDOWS)
 endif()
 
-message(STATUS "Building project in mode: ${CMAKE_BUILD_TYPE}")
+# Apply system-specific definitions to the target
+if(SYSTEM_DEFINITIONS)
+  message(STATUS "System definition: ${SYSTEM_DEFINITIONS}")
+endif()
 
-# --------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Compiler options
+# ----------------------------------------------------------------------------
+# include(${CMAKE_MODULE_PATH}/CompilerOptions.cmake)
+
+# ----------------------------------------------------------------------------
 # Options
-# --------------------------------------------------------------------
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Gw")  # -> whole program global optimization
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /GS-") # -> buffer security check: no 
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /GL")  # -> whole program optimization: enable link-time code generation (disables Zi)
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /GF")  # -> enable string pooling)
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")  # -> enable string pooling)
-endif()
-# --------------------------------------------------------------------
-# Compulsory libraries
-# --------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+include(${CMAKE_MODULE_PATH}/Options.cmake)
 
-# Boost (Compulsory)
+# ----------------------------------------------------------------------------
+# Compulsory libraries
+# ----------------------------------------------------------------------------
+# Eigen https://eigen.tuxfamily.org/index.php?title=Main_Page
+find_package(Eigen3 REQUIRED NO_MODULE)
+
+# Boost https://www.boost.org/
 find_package(
   Boost REQUIRED
   COMPONENTS date_time
@@ -45,68 +59,36 @@ find_package(
              timer
              chrono)
 
-# Eigen (Compulsory)
-find_package(Eigen3 REQUIRED NO_MODULE)
 
-# OpenSmoke++ (Compulsory)
+# OpenSMOKE++ Send an email to alberto.cuoci@polimi.it
 find_package(OpenSMOKEpp REQUIRED)
 
-set(COMPULSORY_LIBRARIES ${Boost_LIBRARIES})
-
-set(COMPULSORY_INCLUDE ${Boost_INCLUDE_DIRS}
-                       ${OPENSMOKE_INCLUDE_DIR} ${Config_INCLUDE_DIR})
-
 # --------------------------------------------------------------------
-# Semi-Compulsory libraries (compulsory just for some solvers)
+# MKL / OpenBLAS
 # --------------------------------------------------------------------
-
 set(LINEAR_ALGEBRA_INCLUDE)
 set(LINEAR_ALGEBRA_LIB)
-
-if(OPENSMOKE_USE_MKL AND OPENSMOKE_USE_OPENBLAS)
-  message(
-    FATAL_ERROR
-      "Solvers can be compiled with just one BLAS distribution at a time! Choose between MKL and OpenBLAS"
-  )
-endif()
-
-# Intel MKL (Optional but strongly rcommended: choose one between MKL=BLAS and
-# OpenBLAS)
-option(OPENSMOKE_USE_MKL "Activate MKL/BLAS support for OpenSMOKEpp" FALSE)
 if(OPENSMOKE_USE_MKL)
   set(BLA_VENDOR Intel10_64lp_seq)
   find_package(BLAS REQUIRED COMPONENTS mkl_core mkl_sequential)
-  message(STATUS $ENV{BLAS_ROOT}/include)
-  list(APPEND LINEAR_ALGEBRA_INCLUDE ${BLAS_ROOT}/include)
-  list(APPEND LINEAR_ALGEBRA_LIB ${BLAS_LIBRARIES})
+  find_package(LAPACK REQUIRED)
 endif()
 
-# OpenBLAS (Optional but strongly Recommended: choose one between MKL and
-# OpenBLAS)
-option(OPENSMOKE_USE_OPENBLAS "Activate OpenBLAS support for OpenSMOKEpp" FALSE)
 if(OPENSMOKE_USE_OPENBLAS)
-  set(BLA_VENDOR OpenBLAS)
-  set(BLA_STATIC ON)
-  find_package(BLAS REQUIRED)
-  list(APPEND LINEAR_ALGEBRA_INCLUDE $ENV{BLAS_ROOT}/include)
-  list(APPEND LINEAR_ALGEBRA_LIB ${BLAS_LIBRARIES})
+  # For OpenBLAS we are not using the cmake standard defined find blas stuff
+  # because it doesnt provide correctly the include directory so in order to do
+  # that we are using the one automatically generated when building from source
+  # the OpenBLAS library usually located in ".../lib/cmake/openblas"
+  find_package(OpenBLAS REQUIRED)
+  message(STATUS "Found OpenBLAS: version ${OpenBLAS_VERSION}")
+  list(APPEND LINEAR_ALGEBRA_INCLUDE ${OpenBLAS_INCLUDE_DIRS})
+  # The library is handled in this way because we need to link against the
+  # static version maybe AC can confirm if this is the right thing
+  list(APPEND LINEAR_ALGEBRA_LIB ${OpenBLAS_INCLUDE_DIRS}/../lib/libopenblas.a)
 endif()
-
-# --------------------------------------------------------------------
-# Compilation flags and options
-# --------------------------------------------------------------------
-
-option(OPENSMOKE_USE_OPENMP "Activate support for OpenMP" FALSE)
-if(OPENSMOKE_USE_OPENMP)
-  find_package(OpenMP REQUIRED)
-  list(APPEND OPTIONAL_LIBRARIES ${OpenMP_CXX_LIBRARIES})
-  # add_compile_definitions(OPENSMOKE_USE_OPENMP=1)
-endif()
-add_compile_options(-fPIC -m64 -O3)
-add_link_options(-fPIC -m64 -O3)
 
 # --------------------------------------------------------------------
 # Project Tree directory
 # --------------------------------------------------------------------
-message(STATUS "${PROJECT_SOURCE_DIR}")
+set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source)
 add_subdirectory(${PROJECT_SOURCE_DIR})

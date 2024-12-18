@@ -1,17 +1,25 @@
-# BatchReactor
-add_executable(BioSMOKEpp.sh
-               ${CMAKE_CURRENT_LIST_DIR}/BioSMOKE.cpp)
+add_executable(BioSMOKEpp ${CMAKE_CURRENT_LIST_DIR}/BioSMOKE.cpp)
 
-target_include_directories(
-  BioSMOKEpp.sh
-  PUBLIC ${PROJECT_SOURCE_DIR} ${COMPULSORY_INCLUDE} ${LINEAR_ALGEBRA_INCLUDE} ${CMAKE_CURRENT_LIST_DIR}/hpp)
+target_include_directories(BioSMOKEpp PUBLIC ${PROJECT_SOURCE_DIR} ${OPENSMOKE_INCLUDE_DIR} ${COMPULSORY_INCLUDE})
 
-target_link_libraries(BioSMOKEpp.sh ${COMPULSORY_LIBRARIES} Eigen3::Eigen ${LINEAR_ALGEBRA_LIB})
+target_link_libraries(BioSMOKEpp
+  ${COMPULSORY_LIBRARIES}
+  Eigen3::Eigen
+  Boost::date_time
+  Boost::filesystem
+  Boost::program_options
+  Boost::system
+  Boost::regex
+  Boost::timer
+  Boost::chrono
+  # Linear Algebra
+  ${LINEAR_ALGEBRA_LIB}
+)
 
 target_compile_definitions(
-  BioSMOKEpp.sh
-  PUBLIC OPENSMOKE_USE_MKL=${OPENSMOKE_USE_MKL}
-         OPENSMOKE_USE_OPENBLAS=${OPENSMOKE_USE_OPENBLAS}
+  BioSMOKEpp
+  PUBLIC OPENSMOKE_USE_MKL=0
+         OPENSMOKE_USE_OPENBLAS=0
          OPENSMOKE_USE_SUNDIALS=0
          OPENSMOKE_USE_UMFPACK=0
          OPENSMOKE_USE_BZZMATH=0
@@ -21,5 +29,3 @@ target_compile_definitions(
          OPENSMOKE_USE_DVODE=0
          OPENSMOKE_USE_DASPK=0
          OPENSMOKE_USE_MEBDF=0)
-
-install(TARGETS BioSMOKEpp.sh DESTINATION ${INSTALL_BIN_DIR})
