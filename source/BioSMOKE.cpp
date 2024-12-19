@@ -6,6 +6,7 @@
 #include <maps/Maps_CHEMKIN>
 #include <maps/ThermodynamicsMap_Solid_CHEMKIN.h>
 #include <idealreactors/utilities/Utilities>
+#include <idealreactors/plugflow/PlugFlowReactor_Profile.h> //maybe to be changed
 
 // Internal headers
 #include "grammar/Grammar_BioSMOKE.h"
@@ -161,20 +162,20 @@ int main(int argc, char **argv)
         }
     }
 
-    std::string name_of_gas_status_subdictionary;
+    //TODO check wheter to use utilities/profiles/FixedProfile.h
+    std::string name_of_profile_subdictionary;
+    bool is_temperature_profile = false;
+    OpenSMOKE::PlugFlowReactor_Profile* temperature_profile; //not really clean
     if (dictionaries(main_dictionary_name_).CheckOption("@TemperatureProfile") == true)
     {
-        dictionaries(main_dictionary_name_).ReadDictionary("@TemperatureProfile", name_of_gas_status_subdictionary);
+        dictionaries(main_dictionary_name_).ReadDictionary("@TemperatureProfile", name_of_profile_subdictionary);
 
-        std::vector<double> x, y;
+        OpenSMOKE::OpenSMOKEVectorDouble x, y;
         std::string x_variable, y_variable;
 
-        // TODO
-        // GetXYProfileFromDictionary(dictionaries(name_of_gas_status_subdictionary), x, y, x_variable, y_variable);
-        // temperature_profile = true;
-        // vector_profile = new OpenSMOKE::BiomassTemperature_Profile(x, y);
-        // temperature_profile_ = vector_profile;
-        // final_time = x[x.Size()];
+        GetXYProfileFromDictionary(dictionaries(name_of_profile_subdictionary), x, y, x_variable, y_variable);
+        is_temperature_profile = true;
+        temperature_profile = new OpenSMOKE::PlugFlowReactor_Profile(x, y, x_variable);
     }
 
     double T_gas, P_Pa_gas;
@@ -205,9 +206,9 @@ int main(int argc, char **argv)
 
         BioSMOKE::GetSolidStatusFromDictionary(dictionaries(name_of_solid_status_subdictionary),
                                                *thermodynamic_solid_map_XML, T_solid, P_solid, rho_solid, omega_solid);
-        // TODO
-        // if (temperature_profile == true)
-        //     Tsolid = temperature_profile_->Get(0.);
+
+        if (is_temperature_profile == true)
+            T_solid = temperature_profile->Get(0.);
     }
 
     return 0;
