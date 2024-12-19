@@ -16,9 +16,6 @@ class Grammar_SolidStatus : public OpenSMOKE::OpenSMOKE_DictionaryGrammar
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Temperature", OpenSMOKE::SINGLE_MEASURE,
                                                           "Temperature of the mixture (i.e. 500 K)", true));
 
-        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord(
-            "@hext", OpenSMOKE::SINGLE_MEASURE, "Convective heat exchange coefficient (i.e. 20 W/m2/K)", true));
-
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Pressure", OpenSMOKE::SINGLE_MEASURE,
                                                           "Pressure of the mixture (i.e. 1 atm)", true));
 
@@ -42,17 +39,12 @@ class Grammar_SolidStatus : public OpenSMOKE::OpenSMOKE_DictionaryGrammar
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord(
             "@Masses", OpenSMOKE::VECTOR_STRING_DOUBLE, "Masses (relative) of the solid mixture (i.e. ASH 2 CELL 1)",
             true, "@MoleFractions @MassFractions @Moles ", "none", "none"));
-
-        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@lambda", OpenSMOKE::SINGLE_MEASURE,
-                                                          "Thermal conductivity for the solid", true));
     }
 };
 
 void GetSolidStatusFromDictionary(OpenSMOKE::OpenSMOKE_Dictionary &dictionary,
                                   OpenSMOKE::ThermodynamicsMap_Solid_CHEMKIN &thermodynamicsSolidMapXML, double &T,
-                                  double &P_Pa, double &rho, OpenSMOKE::OpenSMOKEVectorDouble &omega, double &hext,
-                                  double &lambda_solid)
-
+                                  double &P_Pa, double &rho, OpenSMOKE::OpenSMOKEVectorDouble &omega)
 {
     Grammar_SolidStatus grammar_solid_status;
     dictionary.SetGrammar(grammar_solid_status);
@@ -69,21 +61,6 @@ void GetSolidStatusFromDictionary(OpenSMOKE::OpenSMOKE_Dictionary &dictionary,
                 T = value;
             else if (units == "C")
                 T = value + 273.15;
-            else
-                OpenSMOKE::FatalErrorMessage("Unknown temperature units");
-        }
-    }
-
-    // Heat exchange coefficient
-    {
-        if (dictionary.CheckOption("@hext") == true)
-        {
-            double value;
-            std::string units;
-            dictionary.ReadMeasure("@hext", value, units);
-
-            if (units == "W/m2/K")
-                hext = value;
             else
                 OpenSMOKE::FatalErrorMessage("Unknown temperature units");
         }
@@ -124,20 +101,7 @@ void GetSolidStatusFromDictionary(OpenSMOKE::OpenSMOKE_Dictionary &dictionary,
         }
     }
 
-    // Heat exchange coefficient
-    {
-        if (dictionary.CheckOption("@lambda") == true)
-        {
-            double value;
-            std::string units;
-            dictionary.ReadMeasure("@lambda", value, units);
-
-            if (units == "W/m/K")
-                lambda_solid = value;
-            else
-                OpenSMOKE::FatalErrorMessage("Unknown temperature units");
-        }
-    }
+    
 
     // Composition internal
     {

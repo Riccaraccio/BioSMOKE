@@ -29,19 +29,25 @@ class Grammar_TotalSimulation_analysis : public OpenSMOKE::OpenSMOKE_DictionaryG
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@InitialRadius", OpenSMOKE::SINGLE_MEASURE,
                                                           "Initial sphere radius (es. 0.1m)", true));
 
-        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@totalSimulationTime", OpenSMOKE::SINGLE_MEASURE,
+        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@TotalSimulationTime", OpenSMOKE::SINGLE_MEASURE,
                                                           "Total time to simulate(i.e. 100 s)", true));
 
         AddKeyWord(
             OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Darcy_number", OpenSMOKE::SINGLE_DOUBLE, "Darcy number", true));
+
+        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord(
+            "@hext", OpenSMOKE::SINGLE_MEASURE, "Convective heat exchange coefficient (i.e. 20 W/m2/K)", true));
+
+        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Lambda", OpenSMOKE::SINGLE_MEASURE,
+                                                          "Thermal conductivity for the solid", true));
     }
 };
 
 inline void Get_TotalSimulation_analysisFromDictionary(OpenSMOKE::OpenSMOKE_Dictionary &dictionary,
                                                        std::string &analysis, bool &energy_balance, bool &volume_loss,
                                                        double &final_time, double &porosity, int &number_of_layers,
-                                                       double &initial_radius, double &Da_number,
-                                                       std::vector<std::string> &output_species)
+                                                       double &initial_radius, double &Da_number, double &hext,
+                                                       double &lambda_solid, std::vector<std::string> &output_species)
 {
     Grammar_TotalSimulation_analysis grammar_TotalSimulation_analysis;
     dictionary.SetGrammar(grammar_TotalSimulation_analysis);
@@ -137,6 +143,36 @@ inline void Get_TotalSimulation_analysisFromDictionary(OpenSMOKE::OpenSMOKE_Dict
     {
         if (dictionary.CheckOption("@Darcy_number") == true)
             dictionary.ReadDouble("@Darcy_number", Da_number);
+    }
+
+    // Heat exchange coefficient
+    {
+        if (dictionary.CheckOption("@hext") == true)
+        {
+            double value;
+            std::string units;
+            dictionary.ReadMeasure("@hext", value, units);
+
+            if (units == "W/m2/K")
+                hext = value;
+            else
+                OpenSMOKE::FatalErrorMessage("Unknown heat exchange coefficent units");
+        }
+    }
+
+    // Solid thermal conductivity
+    {
+        if (dictionary.CheckOption("@lambda") == true)
+        {
+            double value;
+            std::string units;
+            dictionary.ReadMeasure("@lambda", value, units);
+
+            if (units == "W/m/K")
+                lambda_solid = value;
+            else
+                OpenSMOKE::FatalErrorMessage("Unknown thermal conductivity units");
+        }
     }
 }
 } // namespace BioSMOKE

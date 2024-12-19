@@ -147,13 +147,13 @@ int main(int argc, char **argv)
 
             std::string analysis;
             bool energy_balance, volume_loss;
-            double final_time, epsi, initial_radius, Da_number;
+            double final_time, epsi, initial_radius, Da_number, hext, lambda_solid;
             int number_of_layers;
             std::vector<std::string> output_species;
 
             BioSMOKE::Get_TotalSimulation_analysisFromDictionary(dictionaries(name_of_solid_status_subdictionary), analysis,
                                                        energy_balance, volume_loss, final_time, epsi, number_of_layers,
-                                                       initial_radius, Da_number, output_species);
+                                                       initial_radius, Da_number, hext, lambda_solid, output_species);
         }
         else
         {
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
         // }
     }
 
-    double T_solid, P_solid, rho_solid, hext, lambda_solid;
+    double T_solid, P_solid, rho_solid;
     OpenSMOKE::OpenSMOKEVectorDouble omega_solid;
     {
         std::string name_of_solid_status_subdictionary;
@@ -204,8 +204,7 @@ int main(int argc, char **argv)
                 .ReadDictionary("@InitialSolidStatus", name_of_solid_status_subdictionary);
 
         BioSMOKE::GetSolidStatusFromDictionary(dictionaries(name_of_solid_status_subdictionary),
-                                               *thermodynamic_solid_map_XML, T_solid, P_solid, rho_solid, omega_solid,
-                                               hext, lambda_solid);
+                                               *thermodynamic_solid_map_XML, T_solid, P_solid, rho_solid, omega_solid);
         // TODO
         // if (temperature_profile == true)
         //     Tsolid = temperature_profile_->Get(0.);
