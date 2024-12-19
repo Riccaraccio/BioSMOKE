@@ -17,7 +17,7 @@ class Grammar_TGA_analysis : public OpenSMOKE::OpenSMOKE_DictionaryGrammar
                                                           "Heat rates of particle (i.e. 1 °C/min)", false));
 
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@TotalSimulationTime", OpenSMOKE::SINGLE_MEASURE,
-                                                          "Total time to simulate(i.e. 100 s)", false));
+                                                          "Total time to simulate(i.e. 100 s)", true));
 
         // AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord(
         //     "@OutputSpecies", OpenSMOKE::VECTOR_STRING, "List of species which will be written on ASCII file",
@@ -26,7 +26,7 @@ class Grammar_TGA_analysis : public OpenSMOKE::OpenSMOKE_DictionaryGrammar
 };
 
 inline void Get_TGAanalysisFromDictionary(OpenSMOKE::OpenSMOKE_Dictionary &dictionary, std::string &analysis,
-                                          double &Heat_Rates, double &final_time,
+                                          double &heating_rate, double &final_time,
                                           std::vector<std::string> &output_species)
 {
     Grammar_TGA_analysis grammar_TGA_analysis;
@@ -43,17 +43,17 @@ inline void Get_TGAanalysisFromDictionary(OpenSMOKE::OpenSMOKE_Dictionary &dicti
             dictionary.ReadMeasure("@HeatingRate", value, units);
 
             if (units == "K/s")
-                Heat_Rates = value;
+                heating_rate = value;
             else if (units == "K/min")
-                Heat_Rates = value / 60.;
+                heating_rate = value / 60.;
             else if (units == "K/h")
-                Heat_Rates = value / 3600.;
+                heating_rate = value / 3600.;
             else
                 OpenSMOKE::FatalErrorMessage("Unknown heating rate unit of measurement");
         }
     }
 
-    // Read residence time
+    // Simulation time
     {
         if (dictionary.CheckOption("@TotalSimulationTime") == true)
         {

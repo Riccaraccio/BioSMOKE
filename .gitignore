@@ -403,3 +403,5 @@ FodyWeavers.xsd
 out/
 build/
 compile_commands.json
+.vscode/
+CMakePresets.json

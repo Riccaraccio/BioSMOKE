@@ -15,25 +15,21 @@ class Grammar_TotalSimulation_analysis : public OpenSMOKE::OpenSMOKE_DictionaryG
     {
 
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Type", OpenSMOKE::SINGLE_STRING,
-                                                          "Type of run: Isothermal |  Adiabatic", true));
+                                                          "Type of run: Isothermal |  Non-Isothermal", true));
 
-        // AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Volume", OpenSMOKE::SINGLE_STRING,
-        //                                                   "Type of run: ConstantVolume |  VariableVolume", true));
-        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@ConstantVolume", OpenSMOKE::SINGLE_BOOL, "TODO", true));
-
-        AddKeyWord(
-            OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Epsi", OpenSMOKE::SINGLE_DOUBLE, "Void fraction  (-)", true));
+        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@ConstantVolume", OpenSMOKE::SINGLE_BOOL, 
+                                                          "Wethere to run a simualtion at constant volume or constant porosity", true));
 
         AddKeyWord(
-            OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Tau", OpenSMOKE::SINGLE_DOUBLE, "Tortuosity factor  (-)", false));
+            OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Porosity", OpenSMOKE::SINGLE_DOUBLE, "Void fraction  (-)", true));
 
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Nlayer", OpenSMOKE::SINGLE_INT,
-                                                          "Number of interval of sphere (-)", true));
+                                                          "Number of discretization intervals (-)", true));
 
-        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Radius", OpenSMOKE::SINGLE_MEASURE,
-                                                          "Sphere raggio (es. 0.1m)", true));
+        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@InitialRadius", OpenSMOKE::SINGLE_MEASURE,
+                                                          "Initial sphere radius (es. 0.1m)", true));
 
-        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@SimulationTime", OpenSMOKE::SINGLE_MEASURE,
+        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@totalSimulationTime", OpenSMOKE::SINGLE_MEASURE,
                                                           "Total time to simulate(i.e. 100 s)", true));
 
         AddKeyWord(
@@ -42,9 +38,9 @@ class Grammar_TotalSimulation_analysis : public OpenSMOKE::OpenSMOKE_DictionaryG
 };
 
 inline void Get_TotalSimulation_analysisFromDictionary(OpenSMOKE::OpenSMOKE_Dictionary &dictionary,
-                                                       std::string &analysis, bool &energyBalance, bool &volumeLoss,
-                                                       double &final_time, double &epsi, double &tau, int &ntr,
-                                                       double &raggioTot, double &Da,
+                                                       std::string &analysis, bool &energy_balance, bool &volume_loss,
+                                                       double &final_time, double &porosity, int &number_of_layers,
+                                                       double &initial_radius, double &Da_number,
                                                        std::vector<std::string> &output_species)
 {
     Grammar_TotalSimulation_analysis grammar_TotalSimulation_analysis;
@@ -59,60 +55,59 @@ inline void Get_TotalSimulation_analysisFromDictionary(OpenSMOKE::OpenSMOKE_Dict
         {
             dictionary.ReadString("@Type", value);
             if (value == "Isothermal")
-                energyBalance = false;
+                energy_balance = false;
             else if (value == "Non_Isothermal")
-                energyBalance = true;
+                energy_balance = true;
             else
             {
                 OpenSMOKE::FatalErrorMessage("Unknown simulation type: " + value +
-                                             "  Conditions:Isothermal or Non_Isothermal");
+                                             "  Conditions:Isothermal or Non-Isothermal");
             }
         }
     }
 
-    // Initial radiusj
+    // Initial radius
     {
-        if (dictionary.CheckOption("@Radius") == true)
+        if (dictionary.CheckOption("@InitialRadius") == true)
         {
             double value;
             std::string units;
-            dictionary.ReadMeasure("@Radius", value, units);
+            dictionary.ReadMeasure("@InitialRadius", value, units);
             if (units == "m")
-                raggioTot = value;
+                initial_radius = value;
             else if (units == "cm")
-                raggioTot = value / 100.;
+                initial_radius = value / 100.;
             else if (units == "mm")
-                raggioTot = value / 1000.;
+                initial_radius = value / 1000.;
             else
-                OpenSMOKE::FatalErrorMessage("Unknown time units");
+                OpenSMOKE::FatalErrorMessage("Unknown initial radius units of measurment");
         }
     }
 
     // Volume
     {
         std::string value;
-        if (dictionary.CheckOption("@Volume") == true)
+        if (dictionary.CheckOption("@ConstantVolume") == true)
         {
-            dictionary.ReadString("@Volume", value);
-            if (value == "ConstantVolume")
-                volumeLoss = false;
-            else if (value == "VariableVolume")
-                volumeLoss = true;
+            dictionary.ReadString("@ConstantVolume", value);
+            if (value == "true")
+                volume_loss = false;
+            else if (value == "false")
+                volume_loss = true;
             else
             {
-                OpenSMOKE::FatalErrorMessage("Unknown simulation type: " + value +
-                                             "  Conditions:ConstantVolume or VariableVolume");
+                OpenSMOKE::FatalErrorMessage("Unknown value for ConstantVolume: " + value + "  Conditions: true or false");
             }
         }
     }
 
-    // TOODOD
+    // Total simulation time
     {
-        if (dictionary.CheckOption("@SimulationTime") == true)
+        if (dictionary.CheckOption("@TotalSimulationTime") == true)
         {
             double value;
             std::string units;
-            dictionary.ReadMeasure("@SimulationTime", value, units);
+            dictionary.ReadMeasure("@TotalSimulationTime", value, units);
             if (units == "s")
                 final_time = value;
             else if (units == "ms")
@@ -122,32 +117,26 @@ inline void Get_TotalSimulation_analysisFromDictionary(OpenSMOKE::OpenSMOKE_Dict
             else if (units == "h")
                 final_time = value * 3600.;
             else
-                OpenSMOKE::FatalErrorMessage("Unknown time units");
+                OpenSMOKE::FatalErrorMessage("Unknown total simulation time units");
         }
     }
 
-    // epsi
+    // porosity
     {
-        if (dictionary.CheckOption("@Epsi") == true)
-            dictionary.ReadDouble("@Epsi", epsi);
+        if (dictionary.CheckOption("@Porosity") == true)
+            dictionary.ReadDouble("@Porosity", porosity);
     }
 
-    // tau
-    {
-        if (dictionary.CheckOption("@Tau") == true)
-            dictionary.ReadDouble("@Tau", tau);
-    }
-
-    // intervall
+    // Number of layers
     {
         if (dictionary.CheckOption("@Nlayer") == true)
-            dictionary.ReadInt("@Nlayer", ntr);
+            dictionary.ReadInt("@Nlayer", number_of_layers);
     }
 
-    // Darcy
+    // Darcy number
     {
         if (dictionary.CheckOption("@Darcy_number") == true)
-            dictionary.ReadDouble("@Darcy_number", Da);
+            dictionary.ReadDouble("@Darcy_number", Da_number);
     }
 }
 } // namespace BioSMOKE

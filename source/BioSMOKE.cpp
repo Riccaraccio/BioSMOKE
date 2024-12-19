@@ -10,6 +10,9 @@
 // Internal headers
 #include "grammar/Grammar_BioSMOKE.h"
 #include "grammar/Grammar_SolidStatus.h"
+#include "grammar/Grammar_TGA_Biomass.h"
+#include "grammar/Grammar_TotalSimulation_Biomass.h"
+
 
 int main(int argc, char **argv)
 {
@@ -27,7 +30,7 @@ int main(int argc, char **argv)
             "input", po::value<std::string>(),
             "name of the file containing the main dictionary (default \"input.dic\")")(
             "dictionary", po::value<std::string>(),
-            "name of the main dictionary to be used (default \"BatchReactor\")");
+            "name of the main dictionary to be used (default \"BioSMOKE\")");
 
         po::variables_map vm;
         try
@@ -122,10 +125,14 @@ int main(int argc, char **argv)
             if (dictionaries(main_dictionary_name_).CheckOption("@TGA"), true)
                 dictionaries(main_dictionary_name_).ReadDictionary("@TGA", name_of_solid_status_subdictionary);
 
+            std::string analysis;
+            double heating_rate, final_time;
+            std::vector<std::string> output_species;
+
+            BioSMOKE::Get_TGAanalysisFromDictionary(dictionaries(name_of_solid_status_subdictionary), analysis, heating_rate,
+                                          final_time, output_species);
+            
             // TODO
-            // Get_TGAanalysisFromDictionary(dictionaries(name_of_solid_status_subdictionary), analysis, Heat_Rates,
-            //                               final_time, output_species_);
-            //
             // if (output_species_[0] == "all")
             // {
             //     output_species_ = kinetics_solid_map_XML->NamesOfSpecies();
@@ -138,10 +145,15 @@ int main(int argc, char **argv)
                 dictionaries(main_dictionary_name_)
                     .ReadDictionary("@Total_Analysis", name_of_solid_status_subdictionary);
 
-            // TODO
-            // Get_TotalSimulation_analysisFromDictionary(dictionaries(name_of_solid_status_subdictionary), analysis,
-            //                                            energyBalance, volumeLoss, final_time, epsi, tau, intervalli,
-            //                                            raggioTot, Da, output_species_);
+            std::string analysis;
+            bool energy_balance, volume_loss;
+            double final_time, epsi, initial_radius, Da_number;
+            int number_of_layers;
+            std::vector<std::string> output_species;
+
+            BioSMOKE::Get_TotalSimulation_analysisFromDictionary(dictionaries(name_of_solid_status_subdictionary), analysis,
+                                                       energy_balance, volume_loss, final_time, epsi, number_of_layers,
+                                                       initial_radius, Da_number, output_species);
         }
         else
         {
@@ -175,6 +187,12 @@ int main(int argc, char **argv)
 
         GetGasStatusFromDictionary(dictionaries(name_of_gas_status_subdictionary), *thermodynamicsMapXML, T_gas,
                                    P_Pa_gas, omega);
+        
+        // TODO
+        // if (output_species_[0] == "all")
+        // {
+        //     output_species_ = kinetics_solid_map_XML->NamesOfSpecies();
+        // }
     }
 
     double T_solid, P_solid, rho_solid, hext, lambda_solid;
