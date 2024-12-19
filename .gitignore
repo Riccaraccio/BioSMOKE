@@ -405,3 +405,4 @@ build/
 compile_commands.json
 .vscode/
 CMakePresets.json
+examples/**/kinetics_compiled/**
