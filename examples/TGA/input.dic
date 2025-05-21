@@ -14,7 +14,7 @@
 
 Dictionary BioSMOKE
 {
-	@KineticsFolder         ../kinetics/Polimi_2003/kinetics_compiled;
+	@KineticsFolder         ../kinetics/Polimi_2407/kinetics_compiled;
 	
 	@Type		               	   TG_Analysis;  //Total_Analysis 
 

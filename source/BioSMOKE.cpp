@@ -236,9 +236,13 @@ int main(int argc, char **argv)
     // Read initial conditions
     {
         std::string name_of_gas_status_subdictionary;
-        if (dictionaries(main_dictionary_name_).CheckOption("@InitialGasStatus") == true)
+        if (dictionaries(main_dictionary_name_).CheckOption("@InletGasStatus") == true)
         {
-            dictionaries(main_dictionary_name_).ReadDictionary("@InitialGasStatus", name_of_gas_status_subdictionary);
+            dictionaries(main_dictionary_name_).ReadDictionary("@InletGasStatus", name_of_gas_status_subdictionary);
+        }
+        else
+        {
+            OpenSMOKE::FatalErrorMessage("Initial gas status not defined");
         }
 
         GetGasStatusFromDictionary(dictionaries(name_of_gas_status_subdictionary), *thermodynamicsMapXML, T_gas,
@@ -255,10 +259,13 @@ int main(int argc, char **argv)
     OpenSMOKE::OpenSMOKEVectorDouble omega0_solid;
     {
         std::string name_of_solid_status_subdictionary;
-        if (dictionaries(main_dictionary_name_).CheckOption("@InitialSolidStatus") == true)
+        if (dictionaries(main_dictionary_name_).CheckOption("@InletSolidStatus") == true)
         {
-            dictionaries(main_dictionary_name_)
-                .ReadDictionary("@InitialSolidStatus", name_of_solid_status_subdictionary);
+            dictionaries(main_dictionary_name_).ReadDictionary("@InletSolidStatus", name_of_solid_status_subdictionary);
+        }
+        else
+        {
+            OpenSMOKE::FatalErrorMessage("Initial solid status not defined");
         }
 
         BioSMOKE::GetSolidStatusFromDictionary(dictionaries(name_of_solid_status_subdictionary),
