@@ -47,7 +47,7 @@
 #endif
 
 #ifdef linux
-#include <dirent.h>
+#include <dirent-mod.h>
 #endif
 
 // OpenSMOKE++ Definitions
@@ -1028,7 +1028,7 @@ int main(int argc, char** argv)
     }        
     else
         OpenSMOKE::FatalErrorMessage("Unknown simulation type");
-    _fcloseall;
+    fcloseall;
 
     cout << "-----------------------------------------------------------------------------" << endl;
     cout << "//                               ALL DONE                                  //" << endl;

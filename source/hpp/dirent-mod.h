@@ -10,6 +10,7 @@
 #ifndef DIRENT_H
 #define DIRENT_H
 
+#ifdef _WIN32
 /*
  * Include windows.h without Windows Sockets 1.1 to prevent conflicts with
  * Windows Sockets 2.0.
@@ -922,8 +923,24 @@ dirent_set_errno(
 }
 
 
+
 #ifdef __cplusplus
 }
 #endif
+
+#else /* POSIX version */
+#include <dirent.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <wchar.h>
+#include <string.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+#endif
+
 #endif /*DIRENT_H*/
 
