@@ -401,3 +401,7 @@ FodyWeavers.xsd
 
 # ADDITIONAL
 out/
+
+build/
+.vscode/
+examples/
