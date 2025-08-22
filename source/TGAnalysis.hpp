@@ -20,7 +20,6 @@ TGAnalysis::TGAnalysis(OpenSMOKE::ThermodynamicsMap_CHEMKIN &thermodynamicsMap,
             BaseSolver(thermodynamicsMap, kineticsMap, transportMap, thermodynamicsSolidMap, kineticsSolidMap, ode_parameters)
 { // clang-format on
 
-    std::cout << "Creating TGAnalysis object..." << std::endl;
     iteration_ = 0;
     counter_file_video_ = 0;
     counter_file_ASCII_ = 0;
@@ -32,14 +31,18 @@ TGAnalysis::TGAnalysis(OpenSMOKE::ThermodynamicsMap_CHEMKIN &thermodynamicsMap,
     omega0_gas_ = omega0_gas;
     heating_rate_ = heating_rate;
 
+    NGS_ = thermodynamicsMap_.NumberOfSpecies();
+    NSS_ = thermodynamicsSolidMap_.number_of_solid_species();
+    NC_ = NGS_ + NSS_;
+    NE_ = NC_ + 1;
+
     thermodynamicsMap_.SetTemperature(T0_);
     thermodynamicsMap_.SetPressure(P0_);
     kineticsMap_.SetTemperature(T0_);
     kineticsMap_.SetPressure(P0_);
-    std::cout << "Setting initial conditions for gas phase..." << std::endl;
-    thermodynamicsMap_.MoleFractions_From_MassFractions(x0_gas_.data(), MW0_gas_,
-                                                        omega0_gas_.data()); // FIXME: does not work
-    std::cout << "Calcuated mole fractions from mass fractions..." << std::endl;
+
+    x0_gas_.resize(NGS_);
+    thermodynamicsMap_.MoleFractions_From_MassFractions(x0_gas_.data(), MW0_gas_, omega0_gas_.data());
     rho0_gas_ = P0_ * MW0_gas_ / (PhysicalConstants::R_J_kmol * T0_);
     MW_gas_ = MW0_gas_;
     rho_gas_ = rho0_gas_;
@@ -49,25 +52,17 @@ TGAnalysis::TGAnalysis(OpenSMOKE::ThermodynamicsMap_CHEMKIN &thermodynamicsMap,
     thermodynamicsSolidMap_.SetPressure(P0_);
     kineticsSolidMap_.SetTemperature(T0_);
     kineticsSolidMap_.SetPressure(P0_);
-    std::cout << "Setting initial conditions for solid phase..." << std::endl;
+    x0_solid_.resize(NSS_);
     thermodynamicsSolidMap_.SolidMoleFractions_From_SolidMassFractions(x0_solid_.data(), MW0_solid_,
                                                                        omega0_solid_.data());
-    std::cout << "Calculated mole fractions from mass fractions..." << std::endl;
     MW_solid_ = MW0_solid_;
     V_solid_ = V0_solid_;
     rho_solid_ = rho0_solid;
     mass0_tot_solid_ = V0_solid_ * rho0_solid_;
     mass_tot_solid_ = mass0_tot_solid_;
 
-    T_ = T0;
-    P_ = P0;
-
-    NGS_ = thermodynamicsSolidMap_.number_of_gas_species();
-    NSS_ = thermodynamicsSolidMap_.number_of_solid_species();
-    NC_ = NGS_ + NSS_;
-    NE_ = NC_ + 1;
-
-    std::cout << "TGAnalysis object created." << std::endl;
+    T_ = T0_;
+    P_ = P0_;
 }
 
 int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vector<double> &dy)
