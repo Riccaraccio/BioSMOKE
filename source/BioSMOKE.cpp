@@ -302,5 +302,5 @@ int main(int argc, char **argv)
         // clang-format on
     }
 
-    return 0;
+    return OPENSMOKE_SUCCESSFULL_EXIT;
 }

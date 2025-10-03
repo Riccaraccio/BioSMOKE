@@ -1,5 +1,7 @@
 // #include "TGAnalysis.h"
 
+#include <interfaces/Interface_Dense_OpenSMOKEppOde.h>
+
 namespace BioSMOKE
 {
 // clang-format off
@@ -127,14 +129,18 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
 
 void TGAnalysis::Solve(const double t0, const double tf)
 {
-    // TODO: bioSMOKE options
-    // if (biosmoke_options_.verbose_video() == true)
-    // {
-    //     std::cout << std::endl;
-    //     std::cout << "-----------------------------------------------------------------------------" << std::endl;
-    //     std::cout << " Solving the TG analysis...                                                  " << std::endl;
-    //     std::cout << "-----------------------------------------------------------------------------" << std::endl;
-    // }
+    typedef OdeSMOKE::KernelDense<OpenSMOKE::ODESystem_OpenSMOKE_ThermogravimetricAnalysis> denseOde;
+    typedef OdeSMOKE::MethodGear<denseOde> methodGear;
+    OdeSMOKE::MultiValueSolver<methodGear> ode_solver;
+    // ode_solver.SetThermogravimetricAnalysis(this);
+    //  TODO: bioSMOKE options
+    //  if (biosmoke_options_.verbose_video() == true)
+    //  {
+    //      std::cout << std::endl;
+    //      std::cout << "-----------------------------------------------------------------------------" << std::endl;
+    //      std::cout << " Solving the TG analysis...                                                  " << std::endl;
+    //      std::cout << "-----------------------------------------------------------------------------" << std::endl;
+    //  }
 
     // TODO: Implement OdeInterface for BioSMOKE
     std::cout << "Solving TG analysis..." << std::endl;
