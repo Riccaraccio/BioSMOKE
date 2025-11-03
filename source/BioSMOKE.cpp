@@ -277,7 +277,7 @@ int main(int argc, char **argv)
         }
     }
 
-    std::shared_ptr<OpenSMOKE::ODE_Parameters> ode_parameters; // TODO
+    std::shared_ptr<OpenSMOKE::ODE_Parameters> ode_parameters = std::make_shared<OpenSMOKE::ODE_Parameters>();
 
     // Convert OpenSMOKE::OpenSMOKEVectorDouble to std::vector<double>
     std::vector<double> omega0gas(omega0_gas.GetHandle(), omega0_gas.GetHandle() + omega0_gas.Size());

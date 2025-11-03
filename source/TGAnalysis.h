@@ -37,12 +37,14 @@ class TGAnalysis : public virtual BaseSolver
 
     virtual int Print(const double t, const std::vector<double> &y);
 
+    virtual void SparseAnalyticalJacobian(const double t, const std::vector<double>& y, Eigen::SparseMatrix<double> &J);
+
+    virtual void DenseAnalyticalJacobian(const double t, const std::vector<double>& y, Eigen::MatrixXd &J);
+
   protected:
     double V_solid_;      // Current volume of the solid phase
-    double T0_;           // Initial temperature
     double T_;            // Current temperature
     double P_;            // Current pressure
-    double P0_;           // Initial pressure
     double heating_rate_; // Heating rate [K/s]
 
     double MW_solid_;                 // Current solid molecular weight
