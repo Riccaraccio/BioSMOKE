@@ -114,7 +114,7 @@ class BaseSolver
     unsigned int counter_file_video_; // Iteration counter for writing on video [-]
     unsigned int counter_file_ASCII_; // Iteration counter for writing on ASCII file [-]
 
-    std::vector<double> y0_; // vector cibntaining the initial values for all the variables
+    std::vector<double> y0_; // vector containing the initial values for all the variables
     std::vector<double> yf_; // vector containing the final values for all the variables
 };
 } // namespace BioSMOKE
