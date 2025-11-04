@@ -23,7 +23,7 @@ class TGAnalysis : public virtual BaseSolver
                 OpenSMOKE::ThermodynamicsMap_Solid_CHEMKIN &thermodynamicsSolidMap,
                 OpenSMOKE::KineticsMap_Solid_CHEMKIN &kineticsSolidMap, 
                 OpenSMOKE::ODE_Parameters &ode_parameters,
-                //OpenSMOKE::BioSMOKE_Options &biosmoke_options, 
+                BioSMOKE::BioSMOKE_Options &biosmoke_options,
                 const double T0, 
                 const double P0,
                 const double rho0_solid,
@@ -37,9 +37,9 @@ class TGAnalysis : public virtual BaseSolver
 
     virtual int Print(const double t, const std::vector<double> &y);
 
-    virtual void SparseAnalyticalJacobian(const double t, const std::vector<double>& y, Eigen::SparseMatrix<double> &J);
+    virtual void SparseAnalyticalJacobian(const double t, const std::vector<double> &y, Eigen::SparseMatrix<double> &J);
 
-    virtual void DenseAnalyticalJacobian(const double t, const std::vector<double>& y, Eigen::MatrixXd &J);
+    virtual void DenseAnalyticalJacobian(const double t, const std::vector<double> &y, Eigen::MatrixXd &J);
 
   protected:
     double V_solid_;      // Current volume of the solid phase

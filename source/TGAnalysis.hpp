@@ -13,14 +13,15 @@ TGAnalysis::TGAnalysis(OpenSMOKE::ThermodynamicsMap_CHEMKIN &thermodynamicsMap,
                        OpenSMOKE::ThermodynamicsMap_Solid_CHEMKIN &thermodynamicsSolidMap,
                        OpenSMOKE::KineticsMap_Solid_CHEMKIN &kineticsSolidMap,
                        OpenSMOKE::ODE_Parameters &ode_parameters,
-                       //OpenSMOKE::BioSMOKE_Options &biosmoke_options,
+                       BioSMOKE::BioSMOKE_Options &biosmoke_options,
                        const double T0,
                        const double P0,
                        const double rho0_solid,
                        const std::vector<double> &omega0_gas,
                        const std::vector<double> &omega0_solid,
                        const double heating_rate) :
-            BaseSolver(thermodynamicsMap, kineticsMap, transportMap, thermodynamicsSolidMap, kineticsSolidMap, ode_parameters)
+            BaseSolver(thermodynamicsMap, kineticsMap, transportMap, thermodynamicsSolidMap,
+                       kineticsSolidMap, ode_parameters, biosmoke_options)
 { // clang-format on
 
     iteration_ = 0;
@@ -91,6 +92,11 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
             T_ = y[i];
     }
 
+    if (is_temperature_profile_ == true)
+    {
+        T_ = biosmoke_profile_->Get(t);
+    }
+
     // set maps conditions
     thermodynamicsSolidMap_.SetTemperature(T_);
     thermodynamicsSolidMap_.SetPressure(P_);
@@ -138,15 +144,16 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
 
 void TGAnalysis::Solve(const double t0, const double tf)
 {
-    //  if (biosmoke_options_.verbose_video() == true)
-    //  {
-         std::cout << std::endl;
-         std::cout << "-----------------------------------------------------------------------------" << std::endl;
-         std::cout << " Solving the TG analysis...                                                  " << std::endl;
-         std::cout << "-----------------------------------------------------------------------------" << std::endl;
-    //  }
+    if (biosmoke_options_.verbose_video() == true)
+    {
+        std::cout << std::endl;
+        std::cout << "-----------------------------------------------------------------------------" << std::endl;
+        std::cout << " Solving the TG analysis...                                                  " << std::endl;
+        std::cout << "-----------------------------------------------------------------------------" << std::endl;
+    }
 
-    for (unsigned int i = 0; i < NE_; i++) {
+    for (unsigned int i = 0; i < NE_; i++)
+    {
         if (i < NGS_)
             y0_[i] = 0.;
         else if (i >= NGS_ && i < NGS_ + NSS_)
@@ -155,16 +162,23 @@ void TGAnalysis::Solve(const double t0, const double tf)
             y0_[i] = T0_solid_;
     }
 
+    // Set the final time, used to print the final status
+    final_time_ = tf;
+
     // Print initial conditions
     {
-        std::vector<double> dy0 (y0_.size());
+        std::vector<double> dy0(y0_.size());
         Equations(t0, y0_, dy0);
         Print(t0, y0_);
     }
 
     // Min and max values
-    Eigen::VectorXd yMin(NE_); for (unsigned int i = 0; i < NE_; i++) yMin(i) = 0.; yMin(NC_) = 0.;
-    Eigen::VectorXd yMax(NE_); for (unsigned int i = 0; i < NE_; i++) yMax(i) = 10000.; yMax(NC_) = 10000.;
+    Eigen::VectorXd yMin(NE_);
+    for (unsigned int i = 0; i < NE_; i++)
+        yMin(i) = 0.;
+    Eigen::VectorXd yMax(NE_);
+    for (unsigned int i = 0; i < NE_; i++)
+        yMax(i) = 10000.;
 
     // Initial conditions
     const Eigen::VectorXd y0_eigen = Eigen::Map<Eigen::VectorXd>(y0_.data(), y0_.size());
@@ -224,6 +238,23 @@ void TGAnalysis::Solve(const double t0, const double tf)
     OdeSMOKE::OdeStatus status = ode_solver.Solve(tf);
     double tEnd = OpenSMOKE::OpenSMOKEGetCpuTime();
 
+    // Check the solution
+    if (status > 0)
+    {
+        ode_solver.Solution(yf_eigen);
+        yf_ = std::vector<double>(yf_eigen.data(), yf_eigen.data() + yf_eigen.size());
+        ode_parameters_.TransferDataFromOdeSolver(ode_solver, tEnd - tStart);
+    }
+
+    if (biosmoke_options_.verbose_video() == true)
+    {
+        std::cout << std::endl;
+        std::cout << "-----------------------------------------------------------------------------" << std::endl;
+        std::cout << " Completed the simulation in " << std::setprecision(6) << tEnd - tStart << " seconds"
+                  << std::endl;
+        std::cout << "-----------------------------------------------------------------------------" << std::endl;
+    }
+
     // CloseAllFiles(); //TODO
 }
 
@@ -231,47 +262,64 @@ int TGAnalysis::Print(const double t, const std::vector<double> &y)
 {
     iteration_++;
 
-    if (iteration_ % 100 == 1)
+    if (biosmoke_options_.verbose_video() == true)
     {
-        std::cout << std::endl;
-        std::cout << "     Time [s]      Temperature [K]    Mass Solid [kg]    Mass Gas [kg] " << std::endl;
-        std::cout << "---------------------------------------------------------------" << std::endl;
+        // Video output
+        if (iteration_ % biosmoke_options_.n_step_video() == 1 || biosmoke_options_.n_step_video() == 1 ||
+            t == final_time_)
+        {
+            counter_file_video_++;
+            if (counter_file_video_ % 100 == 1)
+            {
+                std::cout << std::endl;
+                std::cout << std::setw(10) << std::left << "#Step";
+                std::cout << std::setw(16) << std::left << "Time[s]";
+                std::cout << std::setw(10) << std::left << "T[K]";
+                std::cout << std::setw(10) << std::left << "M/M0[-]";
+                std::cout << std::endl;
+            }
+            std::cout << std::setw(10) << std::left << iteration_;
+            std::cout << std::scientific << std::setw(16) << std::setprecision(6) << std::left << t;
+            std::cout << std::setw(10) << std::left << std::fixed << std::setprecision(3) << T_;
+            std::cout << std::setw(10) << std::left << std::fixed << std::setprecision(6)
+                      << mass_tot_solid_ / mass0_tot_solid_;
+            std::cout << std::endl;
+        }
+
+        if (biosmoke_options_.verbose_output() == true)
+        {
+            // ASCII output
+            if (biosmoke_options_.verbose_ascii_file() == true)
+            {
+                if (iteration_ % biosmoke_options_.n_step_file() == 1 || biosmoke_options_.n_step_file() == 1 ||
+                    t == final_time_)
+                {
+                    counter_file_ASCII_++;
+                }
+            }
+
+            // XML file output
+            if (biosmoke_options_.verbose_xml_file() == true)
+            {
+                if (iteration_ % biosmoke_options_.n_step_file() == 1 || biosmoke_options_.n_step_file() == 1 ||
+                    t == final_time_)
+                {
+                    counter_file_XML_++;
+                }
+            }
+        }
     }
-
-    // recover unknowns: mass_gas <> mass_solid <> T
-    std::vector<double> mass_gas_current_(NGS_, 0.);
-    std::vector<double> mass_solid_current_(NSS_, 0.);
-    double T_current_;
-    for (unsigned int i = 0; i < NE_; i++)
-    {
-        if (i < NGS_)
-            mass_gas_current_[i] = y[i];
-        else if (i < NGS_ + NSS_)
-            mass_solid_current_[i - NGS_] = y[i];
-        else
-            T_current_ = y[i];
-    }
-    double mass_tot_solid_current_ = std::accumulate(mass_solid_current_.begin(), mass_solid_current_.end(), 0.0);
-    double mass_tot_gas_current_ = std::accumulate(mass_gas_current_.begin(), mass_gas_current_.end(), 0.0);
-
-    std::cout << "  " << std::setw(12) << std::scientific << t;
-    std::cout << "  " << std::setw(16) << std::scientific << T_current_;
-    std::cout << "  " << std::setw(16) << std::scientific << mass_tot_solid_current_;
-    std::cout << "  " << std::setw(16) << std::scientific << mass_tot_gas_current_;
-    std::cout << std::endl;
-
     return 0;
 }
 
-void TGAnalysis::SparseAnalyticalJacobian(const double t, const std::vector<double>& y, Eigen::SparseMatrix<double> &J)
+void TGAnalysis::SparseAnalyticalJacobian(const double t, const std::vector<double> &y, Eigen::SparseMatrix<double> &J)
 {
     OpenSMOKE::ErrorMessage("TGAnalysis", "SparseAnalyticalJacobian is not yet available for TGAnalysis");
 }
 
-void TGAnalysis::DenseAnalyticalJacobian(const double t, const std::vector<double>& y, Eigen::MatrixXd &J)
+void TGAnalysis::DenseAnalyticalJacobian(const double t, const std::vector<double> &y, Eigen::MatrixXd &J)
 {
     OpenSMOKE::ErrorMessage("TGAnalysis", "DenseAnalyticalJacobian is not yet available for TGAnalysis");
 }
-
 
 } // namespace BioSMOKE

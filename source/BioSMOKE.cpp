@@ -39,7 +39,8 @@
 // ==================================================
 // Ideal Reactors utilities
 #include <idealreactors/utilities/Utilities>
-#include <idealreactors/plugflow/PlugFlowReactor_Profile.h>
+#include "BioSMOKE_Options.h"
+#include "BioSMOKE_Profile.h"
 
 // ==================================================
 // Internal Headers
@@ -218,7 +219,7 @@ int main(int argc, char **argv)
 
     std::string name_of_profile_subdictionary;
     bool is_temperature_profile = false;
-    OpenSMOKE::PlugFlowReactor_Profile *temperature_profile; // not really clean
+    std::shared_ptr<BioSMOKE::BioSMOKE_Profile> biosmoke_profile;
     if (dictionaries(main_dictionary_name_).CheckOption("@TemperatureProfile") == true)
     {
         dictionaries(main_dictionary_name_).ReadDictionary("@TemperatureProfile", name_of_profile_subdictionary);
@@ -228,7 +229,7 @@ int main(int argc, char **argv)
 
         GetXYProfileFromDictionary(dictionaries(name_of_profile_subdictionary), x, y, x_variable, y_variable);
         is_temperature_profile = true;
-        temperature_profile = new OpenSMOKE::PlugFlowReactor_Profile(x, y, x_variable);
+        biosmoke_profile = std::make_shared<BioSMOKE::BioSMOKE_Profile>(x, y, x_variable);
     }
 
     double T_gas, P_Pa_gas;
@@ -273,11 +274,15 @@ int main(int argc, char **argv)
 
         if (is_temperature_profile == true)
         {
-            T_solid = temperature_profile->Get(0.);
+            T_solid = biosmoke_profile->Get(0.);
         }
     }
 
+    // TODO: add read form dictionary
     std::shared_ptr<OpenSMOKE::ODE_Parameters> ode_parameters = std::make_shared<OpenSMOKE::ODE_Parameters>();
+
+    // TODO: add read form dictionary
+    std::shared_ptr<BioSMOKE::BioSMOKE_Options> biosmoke_options = std::make_shared<BioSMOKE::BioSMOKE_Options>();
 
     // Convert OpenSMOKE::OpenSMOKEVectorDouble to std::vector<double>
     std::vector<double> omega0gas(omega0_gas.GetHandle(), omega0_gas.GetHandle() + omega0_gas.Size());
@@ -292,14 +297,25 @@ int main(int argc, char **argv)
                                             *thermodynamicSolidMapXML,
                                             *kineticsSolidMapXML,
                                             *ode_parameters,
+                                            *biosmoke_options,
                                             T_solid,
                                             P_Pa_solid,
                                             rho_solid,
                                             omega0gas,
                                             omega0solid,
                                             heating_rate);
+
+        if (is_temperature_profile == true)
+            tga_analysis.SetTemperatureProfile(*biosmoke_profile);
+        
         tga_analysis.Solve(0., final_time);
         // clang-format on
+    }
+    else if (type == BioSMOKE::ONE_DIMENSIONAL_SPHERICAL_PARTICLE)
+    {
+        // TODO
+        std::cout << "Total Analysis not yet implemented!" << std::endl;
+        return OPENSMOKE_FATAL_ERROR_EXIT;
     }
 
     return OPENSMOKE_SUCCESSFULL_EXIT;

@@ -31,6 +31,7 @@ class BaseSolver
      * @param kineticsSolidMap map containing the kinetic mechanism for the solid phase
      * @param ode_parameters parameters governing the solution of the stiff ODE system
      * @param biosmoke_options options governing the output
+     * @param biosmoke_profile temperature profile for the simulation
      */
     // clang-format off
     BaseSolver( OpenSMOKE::ThermodynamicsMap_CHEMKIN &thermodynamicsMap, 
@@ -38,8 +39,8 @@ class BaseSolver
                 OpenSMOKE::TransportPropertiesMap_CHEMKIN &transportMap,
                 OpenSMOKE::ThermodynamicsMap_Solid_CHEMKIN &thermodynamicsSolidMap,
                 OpenSMOKE::KineticsMap_Solid_CHEMKIN &kineticsSolidMap, 
-                OpenSMOKE::ODE_Parameters &ode_parameters
-               // OpenSMOKE::BioSMOKE_Options &biosmoke_options,
+                OpenSMOKE::ODE_Parameters &ode_parameters,
+                BioSMOKE::BioSMOKE_Options &biosmoke_options
     ); // clang-format on
 
     virtual ~BaseSolver() = 0;
@@ -72,6 +73,12 @@ class BaseSolver
      */
     unsigned int NumberOfEquations() const { return NE_; };
 
+    /**
+     * @brief Sets a temperature profile for the simulation
+     * @param biosmoke_profile temperature profile
+     */
+    void SetTemperatureProfile(BioSMOKE::BioSMOKE_Profile &biosmoke_profile);
+
   protected:
     OpenSMOKE::ThermodynamicsMap_CHEMKIN &thermodynamicsMap_;
     OpenSMOKE::KineticsMap_CHEMKIN &kineticsMap_;
@@ -79,10 +86,12 @@ class BaseSolver
     OpenSMOKE::ThermodynamicsMap_Solid_CHEMKIN &thermodynamicsSolidMap_;
     OpenSMOKE::KineticsMap_Solid_CHEMKIN &kineticsSolidMap_;
     OpenSMOKE::ODE_Parameters &ode_parameters_;
-    // OpenSMOKE::BioSMOKE_Options &biosmoke_options_;
+    BioSMOKE::BioSMOKE_Options &biosmoke_options_;
+    BioSMOKE::BioSMOKE_Profile *biosmoke_profile_;
 
   protected:
     Analysis_Type analysis_type_; // Type of analysis
+    bool is_temperature_profile_;
 
     double T0_solid_;                  // Initial temperature of the solid phase [K]
     double P0_solid_;                  // Initial pressure of the solid phase [Pa]
@@ -113,6 +122,7 @@ class BaseSolver
     unsigned int iteration_;          // Iteration counter [-]
     unsigned int counter_file_video_; // Iteration counter for writing on video [-]
     unsigned int counter_file_ASCII_; // Iteration counter for writing on ASCII file [-]
+    unsigned int counter_file_XML_;   // Iteration counter for writing on XML file [-]
 
     std::vector<double> y0_; // vector containing the initial values for all the variables
     std::vector<double> yf_; // vector containing the final values for all the variables
