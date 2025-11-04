@@ -41,6 +41,16 @@ class TGAnalysis : public virtual BaseSolver
 
     virtual void DenseAnalyticalJacobian(const double t, const std::vector<double> &y, Eigen::MatrixXd &J);
 
+    virtual void PrepareASCIIFile(const boost::filesystem::path output_file_ascii);
+
+    virtual void PrepareASCIIFile(std::ofstream &fOutput, const boost::filesystem::path output_file_ascii);
+
+    virtual void OpenAllFiles();
+
+    virtual void PrintFinalStatus(std::ostream &fOutput, const double t);
+
+    virtual void CloseAllFiles();
+
   protected:
     double V_solid_;      // Current volume of the solid phase
     double T_;            // Current temperature

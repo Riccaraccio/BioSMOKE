@@ -100,6 +100,7 @@ class BaseSolver
     double V0_solid_;                  // Initial volume of the solid phase [m3]
     std::vector<double> omega0_solid_; // Initial composition of the solid phase [mass fractions]
     std::vector<double> x0_solid_;     // Initial composition of the solid phase [mole fractions]
+    std::vector<double> mass_solid_;
 
     double T0_gas_;                  // Initial temperature of the gas phase [K]
     double P0_gas_;                  // Initial pressure of the gas phase [Pa]
@@ -107,6 +108,7 @@ class BaseSolver
     double MW0_gas_;                 // Initial molecular weight of the gas phase [kg/kmol]
     std::vector<double> omega0_gas_; // Initial composition of the gas phase [mass fractions]
     std::vector<double> x0_gas_;     // Initial composition of the gas phase [mole fractions]
+    std::vector<double> mass_gas_;   // Vector of current gas mass
 
     double final_time_;      // Final time of the simulation [s]
     double mass0_tot_solid_; // Initial mass of the solid phase [kg]
@@ -126,6 +128,16 @@ class BaseSolver
 
     std::vector<double> y0_; // vector containing the initial values for all the variables
     std::vector<double> yf_; // vector containing the final values for all the variables
+
+    std::ofstream fXML_;
+    std::ofstream fASCII_;
+
+    std::stringstream fXML_formation_rates_;
+    std::stringstream fXML_reaction_rates_;
+
+    std::vector<unsigned int> indices_of_output_species_;
+    std::vector<unsigned int> indices_of_sensitivity_species_;
+    std::vector<unsigned int> widths_of_output_species_;
 };
 } // namespace BioSMOKE
 

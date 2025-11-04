@@ -2,6 +2,7 @@
 
 #include "BioSMOKE_OdeInterfaces.h"
 #include <math/native-ode-solvers/MultiValueSolver>
+#include <math/OpenSMOKEFunctions.h>
 
 namespace BioSMOKE
 {
@@ -49,6 +50,8 @@ TGAnalysis::TGAnalysis(OpenSMOKE::ThermodynamicsMap_CHEMKIN &thermodynamicsMap,
     omega_gas_.resize(NGS_);
     x0_solid_.resize(NSS_);
     x0_gas_.resize(NGS_);
+    mass_solid_.resize(NSS_);
+    mass_gas_.resize(NGS_);
 
     thermodynamicsMap_.SetTemperature(T0_solid_);
     thermodynamicsMap_.SetPressure(P0_solid_);
@@ -75,19 +78,130 @@ TGAnalysis::TGAnalysis(OpenSMOKE::ThermodynamicsMap_CHEMKIN &thermodynamicsMap,
 
     T_ = T0_solid_;
     P_ = P0_solid_;
+
+    OpenAllFiles();
+}
+
+void TGAnalysis::PrepareASCIIFile(const boost::filesystem::path output_file_ascii)
+{
+    PrepareASCIIFile(fASCII_, output_file_ascii);
+}
+
+void TGAnalysis::PrepareASCIIFile(std::ofstream &fOutput, const boost::filesystem::path output_file_ascii)
+{
+    indices_of_output_species_.resize(biosmoke_options_.output_species().size());
+    for (unsigned int i = 0; i < biosmoke_options_.output_species().size(); i++)
+        indices_of_output_species_[i] = thermodynamicsSolidMap_.IndexOfSpecies(biosmoke_options_.output_species()[i]);
+
+    if (indices_of_output_species_.size() != 0)
+    {
+        widths_of_output_species_.resize(biosmoke_options_.output_species().size());
+        for (unsigned int i = 0; i < biosmoke_options_.output_species().size(); i++)
+            widths_of_output_species_[i] =
+                OpenSMOKE::CalculateSpeciesFieldWidth(biosmoke_options_.output_species()[i], NC_);
+    }
+    else
+    {
+        widths_of_output_species_.resize(NC_);
+        for (unsigned int i = 0; i < NC_; i++)
+            widths_of_output_species_[i] =
+                OpenSMOKE::CalculateSpeciesFieldWidth(thermodynamicsSolidMap_.NamesOfSpecies()[i], NC_);
+    }
+
+    fOutput.open(output_file_ascii.c_str(), std::ios::out);
+
+    unsigned int counter = 1;
+    fOutput.setf(std::ios::scientific);
+    OpenSMOKE::PrintTagOnASCIILabel(20, fOutput, "t[s]", counter);
+    OpenSMOKE::PrintTagOnASCIILabel(20, fOutput, "T[K]", counter);
+    OpenSMOKE::PrintTagOnASCIILabel(20, fOutput, "Ms/Ms0[-]", counter);
+    OpenSMOKE::PrintTagOnASCIILabel(20, fOutput, "Mg/Ms0[-]", counter);
+
+    if (indices_of_output_species_.size() != 0)
+    {
+        for (unsigned int i = 0; i < indices_of_output_species_.size(); i++)
+            OpenSMOKE::PrintTagOnASCIILabel(
+                widths_of_output_species_[i], fOutput,
+                thermodynamicsMap_.NamesOfSpecies()[indices_of_output_species_[i] - 1] + "_M", counter);
+        // for (unsigned int i = 0; i < indices_of_output_species_.size(); i++)
+        //     OpenSMOKE::PrintTagOnASCIILabel(
+        //         widths_of_output_species_[i], fOutput,
+        //         thermodynamicsMap_.NamesOfSpecies()[indices_of_output_species_[i] - 1] + "_x", counter);
+    }
+    else
+    {
+        for (unsigned int i = 0; i < NC_; i++)
+            OpenSMOKE::PrintTagOnASCIILabel(widths_of_output_species_[i], fOutput,
+                                            thermodynamicsSolidMap_.NamesOfSpecies()[i] + "_M", counter);
+        // for (unsigned int i = 0; i < NC_; i++)
+        //     OpenSMOKE::PrintTagOnASCIILabel(widths_of_output_species_[i], fOutput,
+        //                                     thermodynamicsSolidMap_.NamesOfSpecies()[i] + "_x", counter);
+    }
+
+    fOutput << std::endl;
+}
+
+void TGAnalysis::OpenAllFiles()
+{
+    if (biosmoke_options_.verbose_output() == true)
+    {
+        if (!boost::filesystem::exists(biosmoke_options_.output_path()))
+            OpenSMOKE::CreateDirectory(biosmoke_options_.output_path());
+
+        if (biosmoke_options_.verbose_ascii_file() == true)
+            PrepareASCIIFile(biosmoke_options_.output_path() / "Output.out");
+    }
+}
+
+void TGAnalysis::PrintFinalStatus(std::ostream &fOutput, const double t)
+{
+    fOutput.setf(std::ios::scientific);
+    fOutput << std::setw(20) << std::left << t;
+    fOutput << std::setw(20) << std::left << T_;
+    fOutput << std::setw(20) << std::left << mass_tot_solid_ / mass0_tot_solid_;
+    fOutput << std::setw(20) << std::left << mass_tot_gas_ / mass0_tot_solid_;
+
+    if (indices_of_output_species_.size() != 0)
+    {
+        for (unsigned int i = 0; i < indices_of_output_species_.size(); i++)
+            if (indices_of_output_species_[i] < NGS_)
+                fOutput << std::setw(widths_of_output_species_[i]) << std::left
+                        << mass_gas_[indices_of_output_species_[i]] / (mass_tot_solid_ + mass_tot_gas_);
+            else
+                fOutput << std::setw(widths_of_output_species_[i]) << std::left
+                        << mass_solid_[indices_of_output_species_[i] - NGS_] / (mass_tot_solid_ + mass_tot_gas_);
+    }
+    else
+    {
+        for (unsigned int i = 0; i < NC_; i++)
+            if (i < NGS_)
+                fOutput << std::setw(widths_of_output_species_[i]) << std::left
+                        << mass_gas_[i] / (mass_tot_solid_ + mass_tot_gas_);
+            else
+                fOutput << std::setw(widths_of_output_species_[i]) << std::left
+                        << mass_solid_[i - NGS_] / (mass_tot_solid_ + mass_tot_gas_);
+    }
+    fOutput << std::endl;
+}
+
+void TGAnalysis::CloseAllFiles()
+{
+    if (biosmoke_options_.verbose_output() == true)
+    {
+        if (biosmoke_options_.verbose_ascii_file() == true)
+            fASCII_.close();
+    }
 }
 
 int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vector<double> &dy)
 {
     // recover unknowns: mass_gas <> mass_solid <> T
-    std::vector<double> mass_gas_current_(NGS_, 0.);
-    std::vector<double> mass_solid_current_(NSS_, 0.);
     for (unsigned int i = 0; i < NE_; i++)
     {
         if (i < NGS_)
-            mass_gas_current_[i] = y[i];
+            mass_gas_[i] = y[i];
         else if (i < NGS_ + NSS_)
-            mass_solid_current_[i - NGS_] = y[i];
+            mass_solid_[i - NGS_] = y[i];
         else
             T_ = y[i];
     }
@@ -104,12 +218,12 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
     kineticsSolidMap_.SetPressure(P_);
 
     // calculate total masses
-    mass_tot_solid_ = std::accumulate(mass_solid_current_.begin(), mass_solid_current_.end(), 0.0);
-    mass_tot_gas_ = std::accumulate(mass_gas_current_.begin(), mass_gas_current_.end(), 0.0);
+    mass_tot_solid_ = std::accumulate(mass_solid_.begin(), mass_solid_.end(), 0.0);
+    mass_tot_gas_ = std::accumulate(mass_gas_.begin(), mass_gas_.end(), 0.0);
 
     // caluclate solid mass fractions
     for (unsigned i = 0; i < NSS_; i++)
-        omega_solid_[i] = mass_solid_current_[i] / mass_tot_solid_;
+        omega_solid_[i] = mass_solid_[i] / mass_tot_solid_;
 
     // calculate solid concentrations
     std::vector<double> cSolid_(NSS_, 0.);
@@ -120,7 +234,7 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
     double cTot_gas_ = P_ / (PhysicalConstants::R_J_kmol * T_);
     std::vector<double> cGas_(NGS_, 0.);
     for (unsigned int i = 0; i < NGS_; i++)
-        cGas_[i] = cTot_gas_ * x0_gas_[i];
+        cGas_[i] = cTot_gas_ * x0_gas_[i]; // we only use the inlet gas composition
 
     // calculate rates
     std::vector<double> R_gas_(NGS_, 0.);
@@ -134,7 +248,7 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
         if (i < NGS_)
             dy[i] = R_gas_[i] * thermodynamicsSolidMap_.MW(i) * (mass_tot_solid_ / rho_solid_);
         else if (i < NGS_ + NSS_)
-            dy[i] = R_solid_[i - NGS_] * thermodynamicsSolidMap_.MW(i) * (mass_tot_solid_ / rho_gas_);
+            dy[i] = R_solid_[i - NGS_] * thermodynamicsSolidMap_.MW(i) * (mass_tot_solid_ / rho_solid_);
         else
             dy[i] = heating_rate_;
     }
@@ -248,7 +362,7 @@ void TGAnalysis::Solve(const double t0, const double tf)
     std::cout << " Completed the simulation in " << std::setprecision(6) << tEnd - tStart << " seconds" << std::endl;
     std::cout << "-----------------------------------------------------------------------------" << std::endl;
 
-    // CloseAllFiles(); //TODO
+    CloseAllFiles();
 }
 
 int TGAnalysis::Print(const double t, const std::vector<double> &y)
@@ -268,7 +382,7 @@ int TGAnalysis::Print(const double t, const std::vector<double> &y)
                 std::cout << std::setw(10) << std::left << "#Step";
                 std::cout << std::setw(16) << std::left << "Time[s]";
                 std::cout << std::setw(10) << std::left << "T[K]";
-                std::cout << std::setw(10) << std::left << "M/M0[-]";
+                std::cout << std::setw(10) << std::left << "Ms/Ms0[-]";
                 std::cout << std::endl;
             }
             std::cout << std::setw(10) << std::left << iteration_;
@@ -288,6 +402,7 @@ int TGAnalysis::Print(const double t, const std::vector<double> &y)
                     t == final_time_)
                 {
                     counter_file_ASCII_++;
+                    PrintFinalStatus(fASCII_, t);
                 }
             }
 
