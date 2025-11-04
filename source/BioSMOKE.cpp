@@ -188,11 +188,6 @@ int main(int argc, char **argv)
             BioSMOKE::Get_TGAanalysisFromDictionary(dictionaries(name_of_solid_status_subdictionary), heating_rate,
                                                     final_time, output_species);
 
-            // TODO
-            // if (output_species_[0] == "all")
-            // {
-            //     output_species_ = kineticsSolidMapXML->NamesOfSpecies();
-            // }
             type = BioSMOKE::THERMOGRAVIMETRIC_ANALYSIS;
         }
         else if (analysis_type == "Total_Analysis")
@@ -248,12 +243,6 @@ int main(int argc, char **argv)
 
         GetGasStatusFromDictionary(dictionaries(name_of_gas_status_subdictionary), *thermodynamicsMapXML, T_gas,
                                    P_Pa_gas, omega0_gas);
-
-        // TODO
-        // if (output_species_[0] == "all")
-        // {
-        //     output_species_ = kineticsSolidMapXML->NamesOfSpecies();
-        // }
     }
 
     double T_solid, P_Pa_solid, rho_solid;
@@ -278,11 +267,21 @@ int main(int argc, char **argv)
         }
     }
 
-    // TODO: add read form dictionary
     std::shared_ptr<OpenSMOKE::ODE_Parameters> ode_parameters = std::make_shared<OpenSMOKE::ODE_Parameters>();
+    if (dictionaries(main_dictionary_name_).CheckOption("@OdeParameters") == true)
+    {
+        std::string name_of_ode_parameters_subdictionary;
+        dictionaries(main_dictionary_name_).ReadDictionary("@OdeParameters", name_of_ode_parameters_subdictionary);
+        ode_parameters->SetupFromDictionary(dictionaries(name_of_ode_parameters_subdictionary));
+    }
 
-    // TODO: add read form dictionary
     std::shared_ptr<BioSMOKE::BioSMOKE_Options> biosmoke_options = std::make_shared<BioSMOKE::BioSMOKE_Options>();
+    if (dictionaries(main_dictionary_name_).CheckOption("@Options") == true)
+    {
+        std::string name_of_options_subdictionary;
+        dictionaries(main_dictionary_name_).ReadDictionary("@Options", name_of_options_subdictionary);
+        biosmoke_options->SetupFromDictionary(dictionaries(name_of_options_subdictionary));
+    }
 
     // Convert OpenSMOKE::OpenSMOKEVectorDouble to std::vector<double>
     std::vector<double> omega0gas(omega0_gas.GetHandle(), omega0_gas.GetHandle() + omega0_gas.Size());

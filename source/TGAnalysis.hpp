@@ -144,13 +144,10 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
 
 void TGAnalysis::Solve(const double t0, const double tf)
 {
-    if (biosmoke_options_.verbose_video() == true)
-    {
-        std::cout << std::endl;
-        std::cout << "-----------------------------------------------------------------------------" << std::endl;
-        std::cout << " Solving the TG analysis...                                                  " << std::endl;
-        std::cout << "-----------------------------------------------------------------------------" << std::endl;
-    }
+    std::cout << std::endl;
+    std::cout << "-----------------------------------------------------------------------------" << std::endl;
+    std::cout << " Solving the TG analysis...                                                  " << std::endl;
+    std::cout << "-----------------------------------------------------------------------------" << std::endl;
 
     for (unsigned int i = 0; i < NE_; i++)
     {
@@ -246,14 +243,10 @@ void TGAnalysis::Solve(const double t0, const double tf)
         ode_parameters_.TransferDataFromOdeSolver(ode_solver, tEnd - tStart);
     }
 
-    if (biosmoke_options_.verbose_video() == true)
-    {
-        std::cout << std::endl;
-        std::cout << "-----------------------------------------------------------------------------" << std::endl;
-        std::cout << " Completed the simulation in " << std::setprecision(6) << tEnd - tStart << " seconds"
-                  << std::endl;
-        std::cout << "-----------------------------------------------------------------------------" << std::endl;
-    }
+    std::cout << std::endl;
+    std::cout << "-----------------------------------------------------------------------------" << std::endl;
+    std::cout << " Completed the simulation in " << std::setprecision(6) << tEnd - tStart << " seconds" << std::endl;
+    std::cout << "-----------------------------------------------------------------------------" << std::endl;
 
     // CloseAllFiles(); //TODO
 }

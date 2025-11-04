@@ -32,22 +32,22 @@ class Grammar_BioSMOKE : public OpenSMOKE::OpenSMOKE_DictionaryGrammar
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@TGA",
                                                           OpenSMOKE::SINGLE_DICTIONARY,
                                                           "Name of the dictionary containing the command for the TGA simulation",
-                                                          true));
+                                                          false));
 
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Particle",
                                                           OpenSMOKE::SINGLE_DICTIONARY,
                                                           "Name of the dictionary containing the command for the complete simulation",
-                                                          true));
+                                                          false));
 
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@InletGasStatus",
                                                           OpenSMOKE::SINGLE_DICTIONARY,
                                                           "Name of the dictionary defining the inlet gas composition, temperature and pressure",
-                                                          false));
+                                                          true));
 
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@InletSolidStatus",
                                                           OpenSMOKE::SINGLE_DICTIONARY,
                                                           "Name of the dictionary defining the inlet gas composition, temperature and pressure",
-                                                          false));
+                                                          true));
 
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@OdeParameters",
                                                           OpenSMOKE::SINGLE_DICTIONARY,
@@ -57,6 +57,11 @@ class Grammar_BioSMOKE : public OpenSMOKE::OpenSMOKE_DictionaryGrammar
         AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@TemperatureProfile",
                                                           OpenSMOKE::SINGLE_DICTIONARY,
                                                           "Dictionary containing the numerical parameters for porous medium",
+                                                          false));
+        
+        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@Options",
+                                                          OpenSMOKE::SINGLE_DICTIONARY,
+                                                          "Dictionary containing additional options for BioSMOKE",
                                                           false));
 
         // TODO
