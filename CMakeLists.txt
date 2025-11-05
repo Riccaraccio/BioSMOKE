@@ -75,11 +75,22 @@ set(OPENBLAS_VALUE 0)
 set(MKL_VALUE 0)
 
 # ----------------------------------------------------------------------------
-# MKL: TODO: web link
-if(BIOSMOKE_USE_MKL)
-  message(ERROR "Not implemented yet!")
-  set(OPENBLAS_VALUE 0)
-  set(MKL_VALUE 1)
+# MKL
+if (OPENSMOKE_USE_MKL)
+  set (BLA_VENDOR Intel10_64lp)
+  set (BLA_STATIC ON)
+  find_package (BLAS)
+  
+  # For MKL, BLAS includes LAPACK functionality
+  set(LAPACK_LIBRARIES ${BLAS_LIBRARIES})
+  set(LAPACK_FOUND TRUE)
+ 
+  message (STATUS "MKL_LIBRARIES = ${BLAS_LIBRARIES}")
+  message (STATUS "MKL_DIR       = ${BLAS_DIR}")
+  message (STATUS "LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}")
+  list(APPEND LINEAR_ALGEBRA_INCLUDE ${BLAS_DIR})
+  list(APPEND LINEAR_ALGEBRA_LIB ${BLAS_LIBRARIES})
+  add_compile_definitions(OPENSMOKE_USE_MKL=1)
 endif()
 
 # ----------------------------------------------------------------------------

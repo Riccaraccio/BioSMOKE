@@ -4,7 +4,7 @@
 add_executable(BioSMOKEpp ${CMAKE_CURRENT_LIST_DIR}/BioSMOKE.cpp)
 
 target_include_directories(BioSMOKEpp PUBLIC ${PROJECT_SOURCE_DIR} ${OPENSMOKE_INCLUDE_DIR}
-                                             ${COMPULSORY_INCLUDE})
+  ${COMPULSORY_INCLUDE} ${LINEAR_ALGEBRA_INCLUDE})
 
 target_link_libraries(
   BioSMOKEpp
