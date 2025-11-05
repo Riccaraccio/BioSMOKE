@@ -75,6 +75,7 @@ TGAnalysis::TGAnalysis(OpenSMOKE::ThermodynamicsMap_CHEMKIN &thermodynamicsMap,
     rho_solid_ = rho0_solid;
     mass0_tot_solid_ = V0_solid_ * rho0_solid_;
     mass_tot_solid_ = mass0_tot_solid_;
+    omega_solid_ = omega0_solid_;
 
     T_ = T0_solid_;
     P_ = P0_solid_;
@@ -141,6 +142,58 @@ void TGAnalysis::PrepareASCIIFile(std::ofstream &fOutput, const boost::filesyste
     fOutput << std::endl;
 }
 
+void TGAnalysis::PrepareXMLFile(const boost::filesystem::path output_file_xml)
+{
+    fXML_.open(output_file_xml.c_str(), std::ios::out);
+    OpenSMOKE::SetXMLFile(fXML_);
+    fXML_ << "<Type> ThermogravimetricAnalysis </Type>" << std::endl;
+    unsigned int counter = 2;
+    fXML_ << "<additional>" << std::endl;
+    fXML_ << 6 << std::endl;
+    fXML_ << "time [s] " << counter++ << std::endl;
+    fXML_ << "temperature [K] " << counter++ << std::endl;
+    fXML_ << "pressure [Pa] " << counter++ << std::endl;
+    fXML_ << "mol-weight [kg/kmol] " << counter++ << std::endl;
+    fXML_ << "density [kg/m3] " << counter++ << std::endl;
+    fXML_ << "heat-release [W/m3] " << counter++ << std::endl;
+    fXML_ << "</additional>" << std::endl;
+
+    fXML_ << "<t-p-mw>" << std::endl;
+    fXML_ << 1 << " " << 2 << " " << 3 << std::endl;
+    fXML_ << "</t-p-mw>" << std::endl;
+
+    fXML_ << "<mass-fractions>" << std::endl;
+    fXML_ << thermodynamicsSolidMap_.NumberOfSpecies() << std::endl;
+    for (unsigned int j = 0; j < NC_; j++)
+        fXML_ << thermodynamicsSolidMap_.NamesOfSpecies()[j] << " " << thermodynamicsSolidMap_.MW(j) << " " << counter++
+              << std::endl;
+    fXML_ << "</mass-fractions>" << std::endl;
+    fXML_ << "<profiles>" << std::endl;
+}
+
+void TGAnalysis::CloseXMLFile()
+{
+    fXML_ << "</profiles>" << std::endl;
+    fXML_ << "<profiles-size> " << std::endl;
+    fXML_ << counter_file_XML_ << " " << 1 + (NC_ + 1) << std::endl;
+    fXML_ << "</profiles-size> " << std::endl;
+
+    // if (on_the_fly_post_processing_.is_active() == true)
+    // {
+    // 	fXML_ << "<formation-rates>" << std::endl;
+    // 	fXML_ << "<!--units: kg/m3/s-->" << std::endl;
+    // 	fXML_ << fXML_formation_rates_.str();
+    // 	fXML_ << "</formation-rates>" << std::endl;
+
+    // 	fXML_ << "<reaction-rates>" << std::endl;
+    // 	fXML_ << "<!--units: kmol/m3/s-->" << std::endl;
+    // 	fXML_ << fXML_reaction_rates_.str();
+    // 	fXML_ << "</reaction-rates>" << std::endl;
+    // }
+
+    fXML_ << "</opensmoke>" << std::endl;
+}
+
 void TGAnalysis::OpenAllFiles()
 {
     if (biosmoke_options_.verbose_output() == true)
@@ -150,6 +203,9 @@ void TGAnalysis::OpenAllFiles()
 
         if (biosmoke_options_.verbose_ascii_file() == true)
             PrepareASCIIFile(biosmoke_options_.output_path() / "Output.out");
+
+        if (biosmoke_options_.verbose_xml_file() == true)
+            PrepareXMLFile(biosmoke_options_.output_path() / "Output.xml");
     }
 }
 
@@ -190,6 +246,9 @@ void TGAnalysis::CloseAllFiles()
     {
         if (biosmoke_options_.verbose_ascii_file() == true)
             fASCII_.close();
+
+        if (biosmoke_options_.verbose_xml_file() == true)
+            CloseXMLFile();
     }
 }
 
@@ -222,8 +281,15 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
     mass_tot_gas_ = std::accumulate(mass_gas_.begin(), mass_gas_.end(), 0.0);
 
     // caluclate solid mass fractions
-    for (unsigned i = 0; i < NSS_; i++)
+    for (unsigned int i = 0; i < NSS_; i++)
         omega_solid_[i] = mass_solid_[i] / mass_tot_solid_;
+
+    MW_solid_ = thermodynamicsSolidMap_.SolidMolecularWeight_From_SolidMassFractions(omega_solid_.data());
+
+    // calculate gas mass fractions
+    if (mass_tot_gas_ > 1e-6)
+        for (unsigned int i = 0; i < NGS_; i++)
+            omega_gas_[i] = mass_gas_[i] / mass_tot_gas_;
 
     // calculate solid concentrations
     std::vector<double> cSolid_(NSS_, 0.);
@@ -413,6 +479,35 @@ int TGAnalysis::Print(const double t, const std::vector<double> &y)
                     t == final_time_)
                 {
                     counter_file_XML_++;
+                    fXML_ << t << " ";
+                    fXML_ << T_ << " ";
+                    fXML_ << P_ << " ";
+                    fXML_ << MW_solid_ << " ";
+                    fXML_ << rho_solid_ << " ";
+                    fXML_ << 0 << " "; // Qr
+                    for (unsigned int i = 0; i < NC_; i++)
+                        if (i < NGS_)
+                            fXML_ << std::setprecision(12) << omega_gas_[i] << " ";
+                        else
+                            fXML_ << std::setprecision(12) << omega_solid_[i - NGS_] << " ";
+
+                    fXML_ << std::endl;
+
+                    // Write formation rates and reaction rates
+                    // if (on_the_fly_post_processing_.is_active() == true)
+                    // {
+                    //     // Write formation rates (kg/m3/s)
+                    //     for (unsigned int j = 1; j <= thermodynamicsMap_.NumberOfSpecies(); j++)
+                    //         fXML_formation_rates_ << std::scientific << std::setprecision(9)
+                    //                               << thermodynamicsMap_.MW(j - 1) * R_[j] << " ";
+                    //     fXML_formation_rates_ << std::endl;
+
+                    //     // Write reaction rates (kmol/m3/s)
+                    //     std::vector<double> r = kineticsMap_.GiveMeReactionRates();
+                    //     for (unsigned int j = 0; j < r.size(); j++)
+                    //         fXML_reaction_rates_ << std::scientific << std::setprecision(9) << r[j] << " ";
+                    //     fXML_reaction_rates_ << std::endl;
+                    // }
                 }
             }
         }
@@ -428,6 +523,21 @@ void TGAnalysis::SparseAnalyticalJacobian(const double t, const std::vector<doub
 void TGAnalysis::DenseAnalyticalJacobian(const double t, const std::vector<double> &y, Eigen::MatrixXd &J)
 {
     OpenSMOKE::ErrorMessage("TGAnalysis", "DenseAnalyticalJacobian is not yet available for TGAnalysis");
+}
+
+void TGAnalysis::EnableSensitivityAnalysis(OpenSMOKE::SensitivityMap &sensitivityMap,
+                                           OpenSMOKE::SensitivityAnalysis_Options &sensitivity_options)
+{
+    sensitivityMap_ = &sensitivityMap;
+
+    // PrepareSensitivityXMLFiles(sensitivity_options);
+
+    // ChangeDimensions(NE_, &scaling_Jp_, true);
+
+    // if (sensitivityMap_->dense_solver_type() != SOLVER_DENSE_NONE)
+    //     ChangeDimensions(NE_, NE_, &Jnum_, true);
+    // else
+    //     Jan_.resize(NE_, NE_);
 }
 
 } // namespace BioSMOKE

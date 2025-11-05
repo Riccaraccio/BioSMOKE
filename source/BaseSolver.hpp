@@ -25,7 +25,7 @@ void BaseSolver::SetTemperatureProfile(BioSMOKE::BioSMOKE_Profile &biosmoke_prof
 {
     is_temperature_profile_ = true;
     biosmoke_profile_ = &biosmoke_profile;
-    std::cout << "Temperature profile has been set in the solver." << std::endl;
+    std::cout << "The temperature profile has been set in the solver." << std::endl;
 };
 
 } // namespace BioSMOKE

@@ -37,11 +37,13 @@
 #include <dictionary/OpenSMOKE_DictionaryGrammar.h>
 #include <dictionary/OpenSMOKE_DictionaryKeyWord.h>
 // ==================================================
-// Ideal Reactors utilities
+// Utilities
 #include <idealreactors/utilities/Utilities>
-#include "BioSMOKE_Options.h"
-#include "BioSMOKE_Profile.h"
-
+#include "utilities/sensitivityanalysis/SensitivityAnalysis_Options.h"
+#include "utilities/sensitivityanalysis/SensitivityAnalysisMap.h"
+// ==================================================
+// License
+// #include <licensegenerator/license/OpenSMOKELicenseUtilities.hpp>
 // ==================================================
 // Internal Headers
 // ==================================================
@@ -50,11 +52,15 @@
 #include "grammar/Grammar_TGA_Biomass.h"
 #include "grammar/Grammar_TotalSimulation_Biomass.h"
 
+#include "BioSMOKE_Options.h"
+#include "BioSMOKE_Profile.h"
 #include "TGAnalysis.h"
 
 int main(int argc, char **argv)
 {
-    OpenSMOKE::OpenSMOKE_logo("BioSMOKEpp", "");
+    OpenSMOKE::OpenSMOKE_logo("BioSMOKEpp", "Riccardo Caraccio (riccardo.caraccio@polimi.it)");
+
+    // TODO: add license check
 
     std::string input_file_name_ = "input.dic";
     std::string main_dictionary_name_ = "BioSMOKE";
@@ -283,6 +289,18 @@ int main(int argc, char **argv)
         biosmoke_options->SetupFromDictionary(dictionaries(name_of_options_subdictionary));
     }
 
+    std::shared_ptr<OpenSMOKE::SensitivityAnalysis_Options> sensitivity_options;
+    if (dictionaries(main_dictionary_name_).CheckOption("@SensitivityAnalysis") == true)
+    {
+        sensitivity_options = std::make_shared<OpenSMOKE::SensitivityAnalysis_Options>();
+        std::string name_of_sensitivity_options_subdictionary;
+        dictionaries(main_dictionary_name_)
+            .ReadDictionary("@SensitivityAnalysis", name_of_sensitivity_options_subdictionary);
+
+        biosmoke_options->SetSensitivityAnalysis(true);
+        sensitivity_options->SetupFromDictionary(dictionaries(name_of_sensitivity_options_subdictionary));
+    }
+
     // Convert OpenSMOKE::OpenSMOKEVectorDouble to std::vector<double>
     std::vector<double> omega0gas(omega0_gas.GetHandle(), omega0_gas.GetHandle() + omega0_gas.Size());
     std::vector<double> omega0solid(omega0_solid.GetHandle(), omega0_solid.GetHandle() + omega0_solid.Size());
@@ -302,13 +320,20 @@ int main(int argc, char **argv)
                                             rho_solid,
                                             omega0gas,
                                             omega0solid,
-                                            heating_rate);
+                                            heating_rate); // clang-format on
 
         if (is_temperature_profile == true)
             tga_analysis.SetTemperatureProfile(*biosmoke_profile);
-        
+
+        if (biosmoke_options->sensitivity_analysis() == true)
+        {
+            std::shared_ptr<OpenSMOKE::SensitivityMap> sensitivityMapXML =
+                std::make_shared<OpenSMOKE::SensitivityMap>(*kineticsMapXML, tga_analysis.NumberOfEquations());
+            sensitivityMapXML->SetIndexOfTemperature(thermodynamicSolidMapXML->NumberOfSpecies() + 1);
+            // tga_analysis.EnableSensitivityAnalysis(*sensitivityMapXML, sensitivity_options); //TODO
+        }
+
         tga_analysis.Solve(0., final_time);
-        // clang-format on
     }
     else if (type == BioSMOKE::ONE_DIMENSIONAL_SPHERICAL_PARTICLE)
     {

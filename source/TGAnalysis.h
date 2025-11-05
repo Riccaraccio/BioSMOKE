@@ -31,27 +31,36 @@ class TGAnalysis : public virtual BaseSolver
                 const std::vector<double> &omega0_solid, 
                 const double heating_rate); // clang-format on
 
-    virtual void Solve(const double t0, const double tf);
+    void Solve(const double t0, const double tf);
 
-    virtual int Equations(const double t, const std::vector<double> &y, std::vector<double> &dy);
+    int Equations(const double t, const std::vector<double> &y, std::vector<double> &dy);
 
-    virtual int Print(const double t, const std::vector<double> &y);
+    int Print(const double t, const std::vector<double> &y);
 
-    virtual void SparseAnalyticalJacobian(const double t, const std::vector<double> &y, Eigen::SparseMatrix<double> &J);
+    void SparseAnalyticalJacobian(const double t, const std::vector<double> &y, Eigen::SparseMatrix<double> &J);
 
-    virtual void DenseAnalyticalJacobian(const double t, const std::vector<double> &y, Eigen::MatrixXd &J);
+    void DenseAnalyticalJacobian(const double t, const std::vector<double> &y, Eigen::MatrixXd &J);
 
-    virtual void PrepareASCIIFile(const boost::filesystem::path output_file_ascii);
+    void PrepareASCIIFile(const boost::filesystem::path output_file_ascii);
 
-    virtual void PrepareASCIIFile(std::ofstream &fOutput, const boost::filesystem::path output_file_ascii);
+    void PrepareASCIIFile(std::ofstream &fOutput, const boost::filesystem::path output_file_ascii);
 
-    virtual void OpenAllFiles();
+    void PrepareXMLFile(const boost::filesystem::path output_file_xml);
 
-    virtual void PrintFinalStatus(std::ostream &fOutput, const double t);
+    void CloseXMLFile();
 
-    virtual void CloseAllFiles();
+    void OpenAllFiles();
+
+    void PrintFinalStatus(std::ostream &fOutput, const double t);
+
+    void CloseAllFiles();
+
+    void EnableSensitivityAnalysis(OpenSMOKE::SensitivityMap &sensitivityMap,
+                                   OpenSMOKE::SensitivityAnalysis_Options &sensitivity_options);
 
   protected:
+    OpenSMOKE::SensitivityMap *sensitivityMap_; // Sensitivity map
+
     double V_solid_;      // Current volume of the solid phase
     double T_;            // Current temperature
     double P_;            // Current pressure
