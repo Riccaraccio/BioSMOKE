@@ -327,10 +327,12 @@ int main(int argc, char **argv)
 
         if (biosmoke_options->sensitivity_analysis() == true)
         {
+            std::cout << "Sensitivity Analysis is not yet impelmented" << std::endl;
+            return OPENSMOKE_FATAL_ERROR_EXIT;
             std::shared_ptr<OpenSMOKE::SensitivityMap> sensitivityMapXML =
                 std::make_shared<OpenSMOKE::SensitivityMap>(*kineticsMapXML, tga_analysis.NumberOfEquations());
             sensitivityMapXML->SetIndexOfTemperature(thermodynamicSolidMapXML->NumberOfSpecies() + 1);
-            // tga_analysis.EnableSensitivityAnalysis(*sensitivityMapXML, sensitivity_options); //TODO
+            tga_analysis.EnableSensitivityAnalysis(*sensitivityMapXML, *sensitivity_options);
         }
 
         tga_analysis.Solve(0., final_time);

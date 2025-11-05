@@ -55,11 +55,27 @@ class TGAnalysis : public virtual BaseSolver
 
     void CloseAllFiles();
 
+    void PrepareSensitivityXMLFiles(OpenSMOKE::SensitivityAnalysis_Options &sensitivity_options);
+
+    void CloseSensitivityXMLFiles();
+
     void EnableSensitivityAnalysis(OpenSMOKE::SensitivityMap &sensitivityMap,
                                    OpenSMOKE::SensitivityAnalysis_Options &sensitivity_options);
 
+    void SensitivityAnalysis(const double t, const std::vector<double> &y);
+
+    void NumericalJacobian(const double t, const std::vector<double> &y, std::vector<std::vector<double>> J);
+
   protected:
     OpenSMOKE::SensitivityMap *sensitivityMap_; // Sensitivity map
+    std::vector<double> scaling_Jp_;            // vector containing datafor performing the sensitivity analysis
+    std::vector<std::vector<double>> Jnum_;     // Jacobian matrix (required for sensitivity analysis)
+    Eigen::SparseMatrix<double> Jan_;           // Jacobian matrix (required for sensitivity analysis)
+    unsigned int counter_sensitivity_XML_;      // iteration counter for writing XML sensitivity files
+    std::ofstream fSensitivityParentXML_;       // XML file where the sensitivity analysis is written (parent file)
+    std::ofstream *fSensitivityChildXML_;       // XML files where the sensitivity analysis is written (children files)
+    std::vector<unsigned int>
+        indices_of_sensitivity_species_; // indices of species for which the sensitivity analysis is written on file
 
     double V_solid_;      // Current volume of the solid phase
     double T_;            // Current temperature

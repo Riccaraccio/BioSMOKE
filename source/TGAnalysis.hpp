@@ -92,7 +92,8 @@ void TGAnalysis::PrepareASCIIFile(std::ofstream &fOutput, const boost::filesyste
 {
     indices_of_output_species_.resize(biosmoke_options_.output_species().size());
     for (unsigned int i = 0; i < biosmoke_options_.output_species().size(); i++)
-        indices_of_output_species_[i] = thermodynamicsSolidMap_.IndexOfSpecies(biosmoke_options_.output_species()[i]);
+        indices_of_output_species_[i] =
+            thermodynamicsSolidMap_.IndexOfSpecies(biosmoke_options_.output_species()[i]) - 1;
 
     if (indices_of_output_species_.size() != 0)
     {
@@ -123,7 +124,7 @@ void TGAnalysis::PrepareASCIIFile(std::ofstream &fOutput, const boost::filesyste
         for (unsigned int i = 0; i < indices_of_output_species_.size(); i++)
             OpenSMOKE::PrintTagOnASCIILabel(
                 widths_of_output_species_[i], fOutput,
-                thermodynamicsMap_.NamesOfSpecies()[indices_of_output_species_[i] - 1] + "_M", counter);
+                thermodynamicsSolidMap_.NamesOfSpecies()[indices_of_output_species_[i]] + "_M", counter);
         // for (unsigned int i = 0; i < indices_of_output_species_.size(); i++)
         //     OpenSMOKE::PrintTagOnASCIILabel(
         //         widths_of_output_species_[i], fOutput,
@@ -250,6 +251,9 @@ void TGAnalysis::CloseAllFiles()
         if (biosmoke_options_.verbose_xml_file() == true)
             CloseXMLFile();
     }
+
+    if (biosmoke_options_.sensitivity_analysis() == true)
+        CloseSensitivityXMLFiles();
 }
 
 int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vector<double> &dy)
@@ -287,7 +291,7 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
     MW_solid_ = thermodynamicsSolidMap_.SolidMolecularWeight_From_SolidMassFractions(omega_solid_.data());
 
     // calculate gas mass fractions
-    if (mass_tot_gas_ > 1e-6)
+    if (mass_tot_gas_ > 0)
         for (unsigned int i = 0; i < NGS_; i++)
             omega_gas_[i] = mass_gas_[i] / mass_tot_gas_;
 
@@ -298,6 +302,11 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
 
     // calculate gas concentrations
     double cTot_gas_ = P_ / (PhysicalConstants::R_J_kmol * T_);
+    if (mass_tot_gas_ > 0)
+        rho_gas_ = cTot_gas_ * thermodynamicsMap_.MolecularWeight_From_MassFractions(omega_gas_.data());
+    else
+        rho_gas_ = cTot_gas_ * thermodynamicsMap_.MolecularWeight_From_MassFractions(omega0_gas_.data());
+
     std::vector<double> cGas_(NGS_, 0.);
     for (unsigned int i = 0; i < NGS_; i++)
         cGas_[i] = cTot_gas_ * x0_gas_[i]; // we only use the inlet gas composition
@@ -512,6 +521,10 @@ int TGAnalysis::Print(const double t, const std::vector<double> &y)
             }
         }
     }
+
+    if (biosmoke_options_.sensitivity_analysis() == true)
+        SensitivityAnalysis(t, y);
+
     return 0;
 }
 
@@ -525,19 +538,153 @@ void TGAnalysis::DenseAnalyticalJacobian(const double t, const std::vector<doubl
     OpenSMOKE::ErrorMessage("TGAnalysis", "DenseAnalyticalJacobian is not yet available for TGAnalysis");
 }
 
+void TGAnalysis::NumericalJacobian(const double t, const std::vector<double> &y, std::vector<std::vector<double>> J)
+{
+    // Calculated as suggested by Buzzi (private communication)
+
+    const double ZERO_DER = std::sqrt(OPENSMOKE_TINY_FLOAT);
+    const double ETA2 = std::sqrt(OpenSMOKE::OPENSMOKE_MACH_EPS_DOUBLE);
+    const double TOLR = 100. * OpenSMOKE::OPENSMOKE_MACH_EPS_FLOAT;
+    const double TOLA = 1.e-10;
+
+    std::vector<double> y_plus = y;
+    std::vector<double> dy_original(y.size());
+    std::vector<double> dy_plus(y.size());
+
+    Equations(t, y, dy_original);
+
+    // Derivatives with respect to y[kd]
+    for (unsigned int kd = 0; kd < y.size(); kd++)
+    {
+        double hf = 1.e0;
+        double error_weight = 1. / (TOLA + TOLR * std::fabs(y[kd]));
+        double hJ = ETA2 * std::fabs(std::max(y[kd], 1. / error_weight));
+        double hJf = hf / error_weight;
+        hJ = std::max(hJ, hJf);
+        hJ = std::max(hJ, ZERO_DER);
+
+        // This is what is done by Buzzi
+        double dy = std::min(hJ, 1.e-3 + 1e-3 * std::fabs(y[kd]));
+        double udy = 1. / dy;
+        y_plus[kd] += dy;
+        Equations(t, y_plus, dy_plus);
+
+        for (int j = 0; j < y.size(); j++)
+            J[j][kd] = (dy_plus[j] - dy_original[j]) * udy;
+
+        y_plus[kd] = y[kd];
+    }
+}
+
+void TGAnalysis::PrepareSensitivityXMLFiles(OpenSMOKE::SensitivityAnalysis_Options &sensitivity_options)
+{
+    indices_of_sensitivity_species_.resize(sensitivity_options.list_of_species().size());
+    for (unsigned int i = 0; i < indices_of_sensitivity_species_.size(); i++)
+        indices_of_sensitivity_species_[i] =
+            thermodynamicsSolidMap_.IndexOfSpecies(sensitivity_options.list_of_species()[i]) - 1;
+
+    const boost::filesystem::path parent_file = biosmoke_options_.output_path() / "Sensitivities.xml";
+    fSensitivityParentXML_ << "<variables>" << std::endl;
+    fSensitivityParentXML_ << indices_of_sensitivity_species_.size() + 1 << std::endl;
+    for (unsigned int j = 0; j < indices_of_sensitivity_species_.size(); j++)
+        fSensitivityParentXML_ << thermodynamicsSolidMap_.NamesOfSpecies()[indices_of_sensitivity_species_[j]] << " "
+                               << j << " " << indices_of_sensitivity_species_[j] + 1 << std::endl;
+
+    fSensitivityParentXML_ << "temperature" << " " << indices_of_sensitivity_species_.size() << " " << NC_ + 1
+                           << std::endl;
+    fSensitivityParentXML_ << "</variables>" << std::endl;
+    fSensitivityParentXML_ << "<n-parameters> " << std::endl;
+    fSensitivityParentXML_ << sensitivityMap_->number_of_parameters() << std::endl;
+    fSensitivityParentXML_ << "</n-parameters> " << std::endl;
+
+    fSensitivityChildXML_ = new std::ofstream[indices_of_sensitivity_species_.size() + 1];
+    for (unsigned int j = 0; j < indices_of_sensitivity_species_.size(); j++)
+    {
+        const std::string name =
+            "Sensitivities." + thermodynamicsSolidMap_.NamesOfSpecies()[indices_of_sensitivity_species_[j]] + ".xml";
+        const boost::filesystem::path child_file = biosmoke_options_.output_path() / name;
+        fSensitivityChildXML_[j].open(child_file.c_str(), std::ios::out);
+    }
+
+    {
+        const boost::filesystem::path child_file = biosmoke_options_.output_path() / "Sensitivities.temperature.xml";
+        fSensitivityChildXML_[indices_of_sensitivity_species_.size()].open(child_file.c_str(), std::ios::out);
+    }
+
+    for (unsigned int j = 0; j < indices_of_sensitivity_species_.size() + 1; j++)
+    {
+        OpenSMOKE::SetXMLFile(fSensitivityChildXML_[j]);
+        fSensitivityChildXML_[j] << std::setprecision(5);
+        fSensitivityChildXML_[j] << "<coefficients>" << std::endl;
+    }
+}
+
+void TGAnalysis::CloseSensitivityXMLFiles()
+{
+    fSensitivityParentXML_ << "<points> " << std::endl;
+    fSensitivityParentXML_ << counter_sensitivity_XML_ << std::endl;
+    fSensitivityParentXML_ << "</points> " << std::endl;
+    fSensitivityParentXML_ << "<constant-parameters> " << std::endl;
+    for (unsigned int j = 1; j <= sensitivityMap_->number_of_parameters(); j++)
+        fSensitivityParentXML_ << sensitivityMap_->parameters()[j] << std::endl;
+    fSensitivityParentXML_ << "</constant-parameters> " << std::endl;
+    fSensitivityParentXML_ << "</opensmoke>" << std::endl;
+
+    for (unsigned int j = 0; j < indices_of_sensitivity_species_.size() + 1; j++)
+    {
+        fSensitivityChildXML_[j] << "</coefficients>" << std::endl;
+        fSensitivityChildXML_[j] << "</opensmoke>" << std::endl;
+    }
+}
+
 void TGAnalysis::EnableSensitivityAnalysis(OpenSMOKE::SensitivityMap &sensitivityMap,
                                            OpenSMOKE::SensitivityAnalysis_Options &sensitivity_options)
 {
     sensitivityMap_ = &sensitivityMap;
 
-    // PrepareSensitivityXMLFiles(sensitivity_options);
+    PrepareSensitivityXMLFiles(sensitivity_options);
 
-    // ChangeDimensions(NE_, &scaling_Jp_, true);
+    scaling_Jp_.resize(NE_);
 
-    // if (sensitivityMap_->dense_solver_type() != SOLVER_DENSE_NONE)
-    //     ChangeDimensions(NE_, NE_, &Jnum_, true);
-    // else
-    //     Jan_.resize(NE_, NE_);
+    if (sensitivityMap_->dense_solver_type() != OpenSMOKE::SOLVER_DENSE_NONE)
+        Jnum_.resize(NE_, std::vector<double>(NE_));
+    else
+        Jan_.resize(NE_, NE_);
+}
+
+void TGAnalysis::SensitivityAnalysis(const double t, const std::vector<double> &y)
+{
+    if (iteration_ == 1)
+    {
+        // Writes the coefficients on file (only on request)
+        if (iteration_ % biosmoke_options_.n_step_file() == 1 || biosmoke_options_.n_step_file() == 1)
+        {
+            counter_sensitivity_XML_++;
+            for (unsigned int k = 0; k < indices_of_sensitivity_species_.size(); k++)
+            {
+                for (unsigned int j = 1; j <= sensitivityMap_->number_of_parameters(); j++)
+                    fSensitivityChildXML_[k] << 0. << " ";
+                fSensitivityChildXML_[k] << std::endl;
+            }
+        }
+        else
+        {
+            // Scaling factors
+            for (unsigned int j = 0; j < NC_; j++)
+                if (j < NGS_)
+                    scaling_Jp_[j] = thermodynamicsSolidMap_.MW(j) / rho_gas_;
+                else
+                    scaling_Jp_[j] = thermodynamicsSolidMap_.MW(j) / rho_solid_;
+
+            // Calculates the current Jacobian
+            if (sensitivityMap_->dense_solver_type() != OpenSMOKE::SOLVER_DENSE_NONE)
+                NumericalJacobian(t, y, Jnum_);
+            else
+                SparseAnalyticalJacobian(t, y, Jan_);
+            // Recover variables
+            // TODO: finish implementation
+        }
+    }
 }
 
 } // namespace BioSMOKE

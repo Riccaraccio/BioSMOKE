@@ -136,7 +136,6 @@ class BaseSolver
     std::stringstream fXML_reaction_rates_;
 
     std::vector<unsigned int> indices_of_output_species_;
-    std::vector<unsigned int> indices_of_sensitivity_species_;
     std::vector<unsigned int> widths_of_output_species_;
 };
 } // namespace BioSMOKE
