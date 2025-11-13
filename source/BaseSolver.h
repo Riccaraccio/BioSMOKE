@@ -74,6 +74,12 @@ class BaseSolver
     unsigned int NumberOfEquations() const { return NE_; };
 
     /**
+     * @brief Returns the total number of species
+     * @return the total number of species
+     */
+    unsigned int NumberOfSpecies() const { return NC_; };
+
+    /**
      * @brief Sets a temperature profile for the simulation
      * @param biosmoke_profile temperature profile
      */

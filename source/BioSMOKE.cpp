@@ -40,7 +40,7 @@
 // Utilities
 #include <idealreactors/utilities/Utilities>
 #include "utilities/sensitivityanalysis/SensitivityAnalysis_Options.h"
-#include "utilities/sensitivityanalysis/SensitivityAnalysisMap.h"
+#include "utilities/sensitivityanalysis/SensitivityAnalysisSolidMap.h"
 // ==================================================
 // License
 // #include <licensegenerator/license/OpenSMOKELicenseUtilities.hpp>
@@ -325,14 +325,14 @@ int main(int argc, char **argv)
         if (is_temperature_profile == true)
             tga_analysis.SetTemperatureProfile(*biosmoke_profile);
 
+        std::shared_ptr<OpenSMOKE::SensitivitySolidMap> sensitivitySolidMapXML;
         if (biosmoke_options->sensitivity_analysis() == true)
         {
-            std::cout << "Sensitivity Analysis is not yet impelmented" << std::endl;
-            return OPENSMOKE_FATAL_ERROR_EXIT;
-            std::shared_ptr<OpenSMOKE::SensitivityMap> sensitivityMapXML =
-                std::make_shared<OpenSMOKE::SensitivityMap>(*kineticsMapXML, tga_analysis.NumberOfEquations());
-            sensitivityMapXML->SetIndexOfTemperature(thermodynamicSolidMapXML->NumberOfSpecies() + 1);
-            tga_analysis.EnableSensitivityAnalysis(*sensitivityMapXML, *sensitivity_options);
+            sensitivitySolidMapXML = std::make_shared<OpenSMOKE::SensitivitySolidMap>(
+                *kineticsSolidMapXML, *kineticsMapXML, tga_analysis.NumberOfSpecies());
+            sensitivity_options->TransferOptions(*sensitivitySolidMapXML);
+            tga_analysis.EnableSensitivityAnalysis(*sensitivitySolidMapXML, *sensitivity_options);
+            std::cout << "Sensitivity Analysis enabled" << std::endl;
         }
 
         tga_analysis.Solve(0., final_time);

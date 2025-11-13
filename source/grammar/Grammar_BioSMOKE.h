@@ -64,11 +64,10 @@ class Grammar_BioSMOKE : public OpenSMOKE::OpenSMOKE_DictionaryGrammar
                                                           "Dictionary containing additional options for BioSMOKE",
                                                           false));
 
-        // TODO
-        // AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@SensitivityAnalysis", 
-				// 												OpenSMOKE::SINGLE_DICTIONARY, 
-				// 												"Dictionary containing additional options for solving the sensitivity analysis", 
-				// 												false) );
+        AddKeyWord(OpenSMOKE::OpenSMOKE_DictionaryKeyWord("@SensitivityAnalysis",
+                                                          OpenSMOKE::SINGLE_DICTIONARY,
+                                                          "Dictionary containing additional options for solving the sensitivity analysis",
+                                                          false));
 
         // clang-format on
     }
