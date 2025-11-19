@@ -1,0 +1,5 @@
+!AUTHORS:  RCaraccio
+!NOTE:     Dummy biomass mech
+N2                            1    97.530     3.621     0.000     1.760     4.000 !
+H2O                           2   572.400     2.605     1.844     0.000     4.000 !
+TAR            			      2   818.514     5.351     0.000     13.40     1.000 !From C6H10O5                         
