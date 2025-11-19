@@ -28,6 +28,7 @@ TGAnalysis::TGAnalysis(OpenSMOKE::ThermodynamicsMap_CHEMKIN &thermodynamicsMap,
     iteration_ = 0;
     counter_file_video_ = 0;
     counter_file_ASCII_ = 0;
+    counter_sensitivity_XML_ = 0;
 
     V0_solid_ = 1;
     T0_solid_ = T0;
@@ -555,8 +556,8 @@ void TGAnalysis::NumericalJacobian(const double t, const std::vector<double> &y,
 
     Equations(t, y, dy_original);
 
-    // Derivatives with respect to y[kd]
-    for (unsigned int kd = 0; kd < y.size(); kd++)
+    // Derivatives with respect to y[kd], we skip kd=NE_-1 (temperature)
+    for (unsigned int kd = 0; kd < NC_; kd++)
     {
         double hf = 1.e0;
         double error_weight = 1. / (TOLA + TOLR * std::fabs(y[kd]));
@@ -571,7 +572,7 @@ void TGAnalysis::NumericalJacobian(const double t, const std::vector<double> &y,
         y_plus[kd] += dy;
         Equations(t, y_plus, dy_plus);
 
-        for (int j = 0; j < y.size(); j++)
+        for (int j = 0; j < NC_; j++)
             J[j + 1][kd + 1] = (dy_plus[j] - dy_original[j]) * udy;
 
         y_plus[kd] = y[kd];
@@ -610,11 +611,6 @@ void TGAnalysis::PrepareSensitivityXMLFiles(OpenSMOKE::SensitivityAnalysis_Optio
         fSensitivityChildXML_[j].open(child_file.c_str(), std::ios::out);
     }
 
-    // {
-    //     const boost::filesystem::path child_file = biosmoke_options_.output_path() / "Sensitivities.temperature.xml";
-    //     fSensitivityChildXML_[indices_of_sensitivity_species_.size()].open(child_file.c_str(), std::ios::out);
-    // }
-
     for (unsigned int j = 0; j < indices_of_sensitivity_species_.size(); j++)
     {
         OpenSMOKE::SetXMLFile(fSensitivityChildXML_[j]);
@@ -648,12 +644,13 @@ void TGAnalysis::EnableSensitivityAnalysis(OpenSMOKE::SensitivitySolidMap &sensi
 
     PrepareSensitivityXMLFiles(sensitivity_options);
 
-    OpenSMOKE::ChangeDimensions(NE_, &scaling_Jp_, true);
+    // NC_ dimensions as Temperature is imposed and not a variable
+    OpenSMOKE::ChangeDimensions(NC_, &scaling_Jp_, true);
 
     if (sensitivityMap_->dense_solver_type() != OpenSMOKE::SOLVER_DENSE_NONE)
-        OpenSMOKE::ChangeDimensions(NE_, NE_, &Jnum_, true);
+        OpenSMOKE::ChangeDimensions(NC_, NC_, &Jnum_, true);
     else
-        Jan_.resize(NE_, NE_);
+        Jan_.resize(NC_, NC_);
 }
 
 void TGAnalysis::SensitivityAnalysis(const double t, const std::vector<double> &y)
@@ -674,21 +671,39 @@ void TGAnalysis::SensitivityAnalysis(const double t, const std::vector<double> &
     }
     else
     {
-        // Scaling factors
-        for (unsigned int j = 1; j <= NC_; j++)
-            if (j < NGS_)
-                scaling_Jp_[j] = thermodynamicsSolidMap_.MW(j - 1) / rho_gas_;
-            else
-                scaling_Jp_[j] = thermodynamicsSolidMap_.MW(j - 1) / rho_solid_;
-
         // Calculates the current Jacobian
         if (sensitivityMap_->dense_solver_type() != OpenSMOKE::SOLVER_DENSE_NONE)
             NumericalJacobian(t, y, Jnum_);
         else
             SparseAnalyticalJacobian(t, y, Jan_);
 
-        //  Recover concentrations
+        // Recover concentrations
         OpenSMOKE::OpenSMOKEVectorDouble c_(NC_);
+
+        for (unsigned int i = 0; i < NE_; i++)
+        {
+            if (i < NGS_)
+                mass_gas_[i] = y[i];
+            else if (i < NGS_ + NSS_)
+                mass_solid_[i - NGS_] = y[i];
+            else
+                T_ = y[i];
+        }
+        // calculate total masses
+        mass_tot_solid_ = std::accumulate(mass_solid_.begin(), mass_solid_.end(), 0.0);
+        mass_tot_gas_ = std::accumulate(mass_gas_.begin(), mass_gas_.end(), 0.0);
+
+        // Scaling factors
+        for (unsigned int j = 1; j <= NC_; j++)
+            if (j < NGS_)
+                scaling_Jp_[j] = thermodynamicsSolidMap_.MW(j - 1) * mass_tot_solid_ / rho_solid_;
+            else
+                scaling_Jp_[j] = thermodynamicsSolidMap_.MW(j - 1) * mass_tot_solid_ / rho_solid_;
+
+        // caluclate solid mass fractions
+        for (unsigned int i = 0; i < NSS_; i++)
+            omega_solid_[i] = mass_solid_[i] / mass_tot_solid_;
+
         const double cTot_gas_ = P_ / (PhysicalConstants::R_J_kmol * T_);
         for (unsigned int j = 0; j < NGS_; j++)
             c_[j + 1] = cTot_gas_ * x0_gas_[j]; // we only use the inlet gas composition
@@ -702,9 +717,6 @@ void TGAnalysis::SensitivityAnalysis(const double t, const std::vector<double> &
             OpenSMOKE::FatalErrorMessage("Not yet implemented for TGAnalysis");
         // sensitivityMap_->CalculateSolid(t, T_, P_, c_, Jan_, scaling_Jp_);
 
-        thermodynamicsSolidMap_.SolidMoleFractions_From_SolidMassFractions(x_solid_.data(), MW_solid_,
-                                                                           omega_solid_.data());
-
         // Write the coefficentes on file (only on request)
         if (iteration_ % biosmoke_options_.n_step_file() == 1 || biosmoke_options_.n_step_file() == 1)
         {
@@ -712,40 +724,15 @@ void TGAnalysis::SensitivityAnalysis(const double t, const std::vector<double> &
             for (unsigned int k = 0; k < indices_of_sensitivity_species_.size(); k++)
             {
                 const unsigned int i = indices_of_sensitivity_species_[k];
-                if (i < NGS_)
+                for (unsigned int j = 1; j <= sensitivityMap_->number_of_parameters(); j++)
                 {
-                    for (unsigned int j = 1; j <= sensitivityMap_->number_of_parameters(); j++)
-                    {
-                        double sum = 0.;
-                        for (unsigned int kk = 1; kk <= NGS_; kk++)
-                            sum += sensitivityMap_->sensitivity_coefficients()(kk - 1, j - 1) /
-                                   thermodynamicsSolidMap_.MW(kk - 1);
-                        sum *= x_gas_[i - 1] * MW_gas_;
-
-                        double coefficient = sensitivityMap_->sensitivity_coefficients()(i - 1, j - 1) * MW_gas_ /
-                                                 thermodynamicsSolidMap_.MW(i - 1) -
-                                             sum;
-                        fSensitivityChildXML_[k] << coefficient << " ";
-                    }
-                    fSensitivityChildXML_[k] << std::endl;
+                    double coefficient = sensitivityMap_->sensitivity_coefficients()(i - 1, j - 1) *
+                                         sensitivityMap_->parameters()[j] /
+                                         mass0_tot_solid_; // normalized to initial mass, to be consitent should be
+                                                           // normalized by max(mass_i(t))
+                    fSensitivityChildXML_[k] << coefficient << " ";
                 }
-                else // solid species
-                {
-                    for (unsigned int j = 0; j < sensitivityMap_->number_of_parameters(); j++)
-                    {
-                        double sum = 0.;
-                        for (unsigned int kk = 0; kk < NSS_; kk++)
-                            sum += sensitivityMap_->sensitivity_coefficients()(kk + NGS_, j) /
-                                   thermodynamicsSolidMap_.MW(kk + NGS_);
-                        sum *= x_solid_[i - NGS_] * MW_solid_;
-
-                        double coefficient = sensitivityMap_->sensitivity_coefficients()(i, j) * MW_solid_ /
-                                                 thermodynamicsSolidMap_.MW(i) -
-                                             sum;
-                        fSensitivityChildXML_[k] << coefficient << " ";
-                    }
-                    fSensitivityChildXML_[k] << std::endl;
-                }
+                fSensitivityChildXML_[k] << std::endl;
             }
         }
     }
