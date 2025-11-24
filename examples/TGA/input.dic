@@ -15,7 +15,7 @@
 Dictionary BioSMOKE
 {
     @KineticsFolder             ../kinetics/Polimi_2407/kinetics_compiled;
-    
+
     @Type                       TG_Analysis;
 
     @TGA			            TG_Analysis;
@@ -27,6 +27,8 @@ Dictionary BioSMOKE
     //@TemperatureProfile       temperature-profile;
     //@OdeParameters            ode-options;
     //@Options                  BioSMOKE-Options;
+
+    //@SensitivityAnalysis        sensitivity-options;
 }
 
 Dictionary inlet-gas-mixture
@@ -95,4 +97,14 @@ Dictionary ode-options
 Dictionary BioSMOKE-Options
 {
     @OutputSpecies              H2O CHAR;
+}
+
+Dictionary sensitivity-options
+{
+    @Type                       arrhenius-parameters;
+
+    @DenseSolver                Eigen;
+    @SubSteps                   5;
+
+    @Species                    CELL CO;
 }
