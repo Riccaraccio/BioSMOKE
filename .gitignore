@@ -407,3 +407,4 @@ compile_commands.json
 CMakePresets.json
 examples/**/kinetics_compiled/**
 examples/**/Output/**
+*.png
