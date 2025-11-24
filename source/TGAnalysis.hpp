@@ -273,9 +273,7 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
     }
 
     if (is_temperature_profile_ == true)
-    {
         T_ = biosmoke_profile_->Get(t);
-    }
 
     // set maps conditions
     thermodynamicsSolidMap_.SetTemperature(T_);
@@ -695,10 +693,7 @@ void TGAnalysis::SensitivityAnalysis(const double t, const std::vector<double> &
 
         // Scaling factors
         for (unsigned int j = 1; j <= NC_; j++)
-            if (j < NGS_)
-                scaling_Jp_[j] = thermodynamicsSolidMap_.MW(j - 1) * mass_tot_solid_ / rho_solid_;
-            else
-                scaling_Jp_[j] = thermodynamicsSolidMap_.MW(j - 1) * mass_tot_solid_ / rho_solid_;
+            scaling_Jp_[j] = thermodynamicsSolidMap_.MW(j - 1) * mass_tot_solid_ / rho_solid_;
 
         // caluclate solid mass fractions
         for (unsigned int i = 0; i < NSS_; i++)
@@ -718,7 +713,8 @@ void TGAnalysis::SensitivityAnalysis(const double t, const std::vector<double> &
         // sensitivityMap_->CalculateSolid(t, T_, P_, c_, Jan_, scaling_Jp_);
 
         // Write the coefficentes on file (only on request)
-        if (iteration_ % biosmoke_options_.n_step_file() == 1 || biosmoke_options_.n_step_file() == 1)
+        if (iteration_ % biosmoke_options_.n_step_file() == 1 || biosmoke_options_.n_step_file() == 1 ||
+            t == final_time_)
         {
             counter_sensitivity_XML_++;
             for (unsigned int k = 0; k < indices_of_sensitivity_species_.size(); k++)
@@ -726,10 +722,8 @@ void TGAnalysis::SensitivityAnalysis(const double t, const std::vector<double> &
                 const unsigned int i = indices_of_sensitivity_species_[k];
                 for (unsigned int j = 1; j <= sensitivityMap_->number_of_parameters(); j++)
                 {
-                    double coefficient = sensitivityMap_->sensitivity_coefficients()(i - 1, j - 1) *
-                                         sensitivityMap_->parameters()[j] /
-                                         mass0_tot_solid_; // normalized to initial mass, to be consitent should be
-                                                           // normalized by max(mass_i(t))
+                    double coefficient = sensitivityMap_->sensitivity_coefficients()(i - 1, j - 1) / mass0_tot_solid_;
+
                     fSensitivityChildXML_[k] << coefficient << " ";
                 }
                 fSensitivityChildXML_[k] << std::endl;
