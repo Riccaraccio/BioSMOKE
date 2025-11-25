@@ -86,7 +86,7 @@ sensitivity_data = np.array(
 output_root = ET.parse(os.path.join(outputFolder, "Output.xml")).getroot()
 output_data = np.array(XmlTagToArray(output_root, "profiles")).astype(float)
 
-species_index = np.array(XmlTagToArray(output_root, "mass-fractions")[1:])
+species_index = np.array(XmlTagToArray(output_root, "mass")[1:])
 temp = np.where(species_index[:, 0] == target_species)[0][0]
 target_species_index = int(species_index[temp, -1]) - 2  # Adjust for 0-based indexing
 print(f"Target species '{target_species}' found in Output.xml")
