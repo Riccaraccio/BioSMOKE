@@ -166,12 +166,12 @@ void TGAnalysis::PrepareXMLFile(const boost::filesystem::path output_file_xml)
     fXML_ << 1 << " " << 2 << " " << 3 << std::endl;
     fXML_ << "</t-p-mw>" << std::endl;
 
-    fXML_ << "<mass-fractions>" << std::endl;
+    fXML_ << "<mass>" << std::endl; // was <mass-fractions> but mass is more useful
     fXML_ << thermodynamicsSolidMap_.NumberOfSpecies() << std::endl;
     for (unsigned int j = 0; j < NC_; j++)
         fXML_ << thermodynamicsSolidMap_.NamesOfSpecies()[j] << " " << thermodynamicsSolidMap_.MW(j) << " " << counter++
               << std::endl;
-    fXML_ << "</mass-fractions>" << std::endl;
+    fXML_ << "</mass>" << std::endl; // was </mass-fractions> but mass is more useful
     fXML_ << "<profiles>" << std::endl;
 }
 
@@ -497,9 +497,15 @@ int TGAnalysis::Print(const double t, const std::vector<double> &y)
                     fXML_ << 0 << " "; // Qr
                     for (unsigned int i = 0; i < NC_; i++)
                         if (i < NGS_)
-                            fXML_ << std::setprecision(12) << omega_gas_[i] << " ";
+                        {
+                            fXML_ << std::setprecision(12) << mass_gas_[i] / mass0_tot_solid_ << " ";
+                            // fXML_ << std::setprecision(12) << omega_gas_[i] << " ";
+                        }
                         else
-                            fXML_ << std::setprecision(12) << omega_solid_[i - NGS_] << " ";
+                        {
+                            fXML_ << std::setprecision(12) << mass_solid_[i - NGS_] / mass0_tot_solid_ << " ";
+                            // fXML_ << std::setprecision(12) << omega_solid_[i - NGS_] << " ";
+                        }
 
                     fXML_ << std::endl;
 
