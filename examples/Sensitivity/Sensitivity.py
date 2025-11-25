@@ -6,7 +6,6 @@ matplotlib.use("Agg")
 import xml.etree.ElementTree as ET
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 from enum import Enum
 
@@ -15,6 +14,7 @@ from enum import Enum
 class NormalizationType(Enum):
     MAX_VALUE = 0
     LOCAL_VALUE = 1
+    NONE = 2
 
 
 # Wether to order by max peak or area under curve
@@ -31,28 +31,26 @@ This section allows users to configure parameters for the analysis.
 """
 
 ## File paths and parameters
-targetSpecies = "CO"  # Target species for sensitivity analysis
+target_species = "CO"  # Target species for sensitivity analysis
 outputFolder = os.path.join("..", "TGA", "Output")  # Folder containing output XML files
-kineticFolder = os.path.join(
-    "..", "Kinetics", "Polimi_2407", "kinetics_compiled"
-)  # Kinetic folder path
 number_of_top_reactions = 20  # Number of top reactions to plot
 
 ## Normalization
-# Recommended to use MAX_VALUE normalization for solid species and LOCAL_VALUE for gas species
-normalization_type = NormalizationType.LOCAL_VALUE
+# Recommended to use MAX_VALUE of M_i for normalization to avoid issues at low concentrations
+normalization_type = NormalizationType.MAX_VALUE
 # Optionally normalize sensitivity coefficients using the highest value of the sensitivity coefficients
-normalize = True
+normalize = False
 
 ## Ordering
 # MAX_PEAK: Order by maximum peak sensitivity value
 # AREA_UNDER_CURVE: Order by area under the sensitivity curve
-ordering_type = OrderingType.AREA_UNDER_CURVE
+# Recommended to use MAX_PEAK
+ordering_type = OrderingType.MAX_PEAK
 
 #######################
 
 sensitivity_child_file = os.path.join(
-    outputFolder, f"Sensitivities.{targetSpecies}.xml"
+    outputFolder, f"Sensitivities.{target_species}.xml"
 )
 sensitivity_parent_file = os.path.join(outputFolder, "Sensitivities.xml")
 
@@ -89,8 +87,9 @@ output_root = ET.parse(os.path.join(outputFolder, "Output.xml")).getroot()
 output_data = np.array(XmlTagToArray(output_root, "profiles")).astype(float)
 
 species_index = np.array(XmlTagToArray(output_root, "mass-fractions")[1:])
-temp = np.where(species_index[:, 0] == targetSpecies)[0][0]
-target_species_index = int(species_index[temp, -1])
+temp = np.where(species_index[:, 0] == target_species)[0][0]
+target_species_index = int(species_index[temp, -1]) - 2  # Adjust for 0-based indexing
+print(f"Target species '{target_species}' found in Output.xml")
 
 target_species_profile = output_data[:, target_species_index]
 time_points = output_data[:, 0]  # the first column is time
@@ -107,12 +106,13 @@ if normalization_type == NormalizationType.MAX_VALUE:
 elif normalization_type == NormalizationType.LOCAL_VALUE:
     print("Normalizing by local value...")
     target_species_profile[target_species_profile < 1e-10] = 1e-10
-    plt.plot(time_points, target_species_profile, label="Target Species Profile")
-    plt.savefig(f"TargetSpeciesProfile_{targetSpecies}.png")
 
     normalized_sensitivities = (
         sensitivity_data * parameters.T / target_species_profile[:, np.newaxis]
     )
+elif normalization_type == NormalizationType.NONE:
+    print("No normalization applied to sensitivity coefficients.")
+    normalized_sensitivities = sensitivity_data
 
 # Calculate coefficents
 if OrderingType.MAX_PEAK:
@@ -137,7 +137,6 @@ elif OrderingType.AREA_UNDER_CURVE:
 ordering = np.argsort(np.abs(ordering_values))[::-1]
 # ordering = np.argsort(np.abs(ordering_values))
 
-print("Ordering of parameters (by index):", ordering + 1)
 reaction_indexes = ordering + 1  # Reaction indices are 1-based
 
 # Select top N reactions
@@ -204,17 +203,7 @@ for i, (idx, value) in enumerate(zip(top_N_reaction_indexes, top_N_values)):
 
 ax.set_yticks([])
 ax.set_xlabel("Sensitivity Coefficient")
-ax.set_title(f"Top {N} Reactions for Sensitivity of {targetSpecies}")
+ax.set_title(f"Top {N} Reactions for Sensitivity of {target_species}")
 ax.grid(axis="x", alpha=0.3, linestyle="--")
 plt.tight_layout()
-plt.savefig(f"Sensitivity_{targetSpecies}.png", dpi=300, bbox_inches="tight")
-plt.clf()
-plt.close()
-
-# Plotting
-plt.plot(time_points, normalized_sensitivities)
-plt.xlabel("Time (s)")
-plt.ylabel(f"Sensitivity Coefficients for {targetSpecies}")
-plt.title(f"Sensitivity Analysis for {targetSpecies}")
-plt.grid()
-plt.savefig(f"Sensitivity_{targetSpecies}_Profiles.png")
+plt.savefig(f"Sensitivity_{target_species}.png", dpi=300, bbox_inches="tight")
