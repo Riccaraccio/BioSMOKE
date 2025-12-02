@@ -321,8 +321,12 @@ int TGAnalysis::Equations(const double t, const std::vector<double> &y, std::vec
     // calculate residuals
     for (unsigned int i = 0; i < NE_; i++)
     {
+        // We use max between 0 and R_gas to avoid numerical problems when negative rates are computed
+        // This approximately simulates that gases leave the system and do not re-enter.
+        // Additionally, consider for example a TGA in Air: O2 is consumed by the solid, but initial mass of O2 in the
+        // gas phase is zero. Max simulates that there is an infinite reservoir of O2 outside the system.
         if (i < NGS_)
-            dy[i] = R_gas_[i] * thermodynamicsSolidMap_.MW(i) * (mass_tot_solid_ / rho_solid_);
+            dy[i] = std::max(R_gas_[i], 0.) * thermodynamicsSolidMap_.MW(i) * (mass_tot_solid_ / rho_solid_);
         else if (i < NGS_ + NSS_)
             dy[i] = R_solid_[i - NGS_] * thermodynamicsSolidMap_.MW(i) * (mass_tot_solid_ / rho_solid_);
         else
