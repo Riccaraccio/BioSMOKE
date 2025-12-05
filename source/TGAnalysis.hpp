@@ -645,7 +645,7 @@ void TGAnalysis::CloseSensitivityXMLFiles()
     }
 }
 
-void TGAnalysis::EnableSensitivityAnalysis(OpenSMOKE::SensitivitySolidMap &sensitivityMap,
+void TGAnalysis::EnableSensitivityAnalysis(OpenSMOKE::SensitivityMap<OpenSMOKE::KineticsMap_Solid_CHEMKIN> &sensitivityMap,
                                            OpenSMOKE::SensitivityAnalysis_Options &sensitivity_options)
 {
     sensitivityMap_ = &sensitivityMap;
@@ -717,7 +717,7 @@ void TGAnalysis::SensitivityAnalysis(const double t, const std::vector<double> &
             c_[j + NGS_ + 1] = rho_solid_ * omega_solid_[j] / thermodynamicsSolidMap_.MW(j + NGS_);
 
         if (sensitivityMap_->dense_solver_type() != OpenSMOKE::SOLVER_DENSE_NONE)
-            sensitivityMap_->CalculateSolid(t, T_, P_, c_, Jnum_, scaling_Jp_);
+            sensitivityMap_->Calculate(t, T_, P_, c_, Jnum_, scaling_Jp_);
         else
             OpenSMOKE::FatalErrorMessage("Not yet implemented for TGAnalysis");
         // sensitivityMap_->CalculateSolid(t, T_, P_, c_, Jan_, scaling_Jp_);

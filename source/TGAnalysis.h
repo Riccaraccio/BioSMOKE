@@ -59,7 +59,7 @@ class TGAnalysis : public virtual BaseSolver
 
     void CloseSensitivityXMLFiles();
 
-    void EnableSensitivityAnalysis(OpenSMOKE::SensitivitySolidMap &sensitivityMap,
+    void EnableSensitivityAnalysis(OpenSMOKE::SensitivityMap<OpenSMOKE::KineticsMap_Solid_CHEMKIN> &sensitivityMap,
                                    OpenSMOKE::SensitivityAnalysis_Options &sensitivity_options);
 
     void SensitivityAnalysis(const double t, const std::vector<double> &y);
@@ -67,7 +67,7 @@ class TGAnalysis : public virtual BaseSolver
     void NumericalJacobian(const double t, const std::vector<double> &y, OpenSMOKE::OpenSMOKEMatrixDouble &J);
 
   protected:
-    OpenSMOKE::SensitivitySolidMap *sensitivityMap_; // Sensitivity map
+    OpenSMOKE::SensitivityMap<OpenSMOKE::KineticsMap_Solid_CHEMKIN> *sensitivityMap_; // Sensitivity map
     OpenSMOKE::OpenSMOKEVectorDouble scaling_Jp_;    // vector containing datafor performing the sensitivity analysis
     OpenSMOKE::OpenSMOKEMatrixDouble Jnum_;          // Jacobian matrix (required for sensitivity analysis)
     Eigen::SparseMatrix<double> Jan_;                // Jacobian matrix (required for sensitivity analysis)
