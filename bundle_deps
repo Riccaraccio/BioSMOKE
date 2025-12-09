@@ -1,0 +1,62 @@
+#!/bin/zsh
+# Bundle dependencies for macOS distribution
+# Usage: ./scripts/bundle_deps.sh /path/to/install/prefix
+
+set -e
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <install_prefix>"
+    exit 1
+fi
+
+INSTALL_PREFIX="$1"
+BIN_DIR="${INSTALL_PREFIX}/bin"
+LIB_DIR="${INSTALL_PREFIX}/lib"
+
+echo "Bundling dependencies for ${INSTALL_PREFIX}"
+
+# Create lib directory if it doesn't exist
+mkdir -p "${LIB_DIR}"
+
+# Find all executables
+for exe in "${BIN_DIR}"/*; do
+    [ -f "$exe" ] || continue
+    [ -x "$exe" ] || continue
+
+    echo "Processing $(basename $exe)..."
+
+    # Add @rpath to executable
+    install_name_tool -add_rpath "@loader_path/../lib" "$exe" 2>/dev/null || true
+
+    # Get dependencies
+    otool -L "$exe" | grep -E '^\s+/' | awk '{print $1}' | while read -r lib; do
+        # Skip system libraries
+        [[ "$lib" =~ ^/usr/lib ]] && continue
+        [[ "$lib" =~ ^/System ]] && continue
+        [[ "$lib" =~ ^@rpath ]] && continue
+        [[ "$lib" =~ ^@loader_path ]] && continue
+
+        # Copy library if from Homebrew
+        if [[ "$lib" =~ ^/opt/homebrew ]]; then
+            libname=$(basename "$lib")
+
+            # Copy if not already there
+            if [ ! -f "${LIB_DIR}/${libname}" ]; then
+                echo "  Copying ${libname}"
+                cp "$lib" "${LIB_DIR}/"
+                chmod u+w "${LIB_DIR}/${libname}"
+
+                # Fix library's install name
+                install_name_tool -id "@rpath/${libname}" "${LIB_DIR}/${libname}"
+            fi
+
+            # Update executable to use @rpath
+            install_name_tool -change "$lib" "@rpath/${libname}" "$exe"
+        fi
+    done
+done
+
+echo "Done! Dependencies bundled in ${LIB_DIR}"
+echo ""
+echo "To distribute, tar the entire directory:"
+echo "  tar -czf opensmoke-bundle.tar.gz -C $(dirname ${INSTALL_PREFIX}) $(basename ${INSTALL_PREFIX})"
