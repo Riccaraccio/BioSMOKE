@@ -2,9 +2,16 @@
 add_executable(BioSMOKEpp.sh
                ${CMAKE_CURRENT_LIST_DIR}/BioSMOKE.cpp)
 
+apply_compiler_options(BioSMOKEpp.sh)
+
 target_include_directories(
   BioSMOKEpp.sh
-  PUBLIC ${PROJECT_SOURCE_DIR} ${COMPULSORY_INCLUDE} ${LINEAR_ALGEBRA_INCLUDE} ${CMAKE_CURRENT_LIST_DIR}/hpp)
+  PUBLIC
+  ${PROJECT_SOURCE_DIR}
+  ${COMPULSORY_INCLUDE}
+  ${LINEAR_ALGEBRA_INCLUDE}
+  ${CMAKE_CURRENT_LIST_DIR}/hpp
+)
 
 target_link_libraries(BioSMOKEpp.sh ${COMPULSORY_LIBRARIES} Eigen3::Eigen ${LINEAR_ALGEBRA_LIB})
 
